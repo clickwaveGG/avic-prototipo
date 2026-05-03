@@ -8,6 +8,13 @@ type Props = {
   children: ReactNode;
 };
 
+function isMobileLike() {
+  if (typeof window === "undefined") return false;
+  const coarse = window.matchMedia?.("(pointer: coarse)").matches ?? false;
+  const ua = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  return coarse || ua;
+}
+
 export function GoogleLoginButton({ className, children }: Props) {
   const [loading, setLoading] = useState(false);
 
@@ -27,10 +34,15 @@ export function GoogleLoginButton({ className, children }: Props) {
     setLoading(true);
     try {
       const supabase = createClient();
+      const mobile = isMobileLike();
+      const origin = window.location.origin;
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?popup=1`,
+          redirectTo: mobile
+            ? `${origin}/auth/callback`
+            : `${origin}/auth/callback?popup=1`,
           skipBrowserRedirect: true,
           queryParams: { access_type: "offline", prompt: "consent" },
         },
@@ -39,6 +51,11 @@ export function GoogleLoginButton({ className, children }: Props) {
       if (error || !data?.url) {
         alert(`Erro ao iniciar login: ${error?.message ?? "sem URL"}`);
         setLoading(false);
+        return;
+      }
+
+      if (mobile) {
+        window.location.href = data.url;
         return;
       }
 
@@ -53,8 +70,7 @@ export function GoogleLoginButton({ className, children }: Props) {
       );
 
       if (!popup) {
-        alert("Pop-up bloqueado. Libera pop-ups pra esse site e tenta de novo.");
-        setLoading(false);
+        window.location.href = data.url;
         return;
       }
 
