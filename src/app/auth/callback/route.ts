@@ -1,16 +1,61 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+function popupHtml(message: "ok" | "fail", reason?: string) {
+  const safeReason = (reason ?? "").replace(/[<>"']/g, "");
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Avicena · login</title>
+<style>
+body { font-family: system-ui, sans-serif; background:#F7F9F8; color:#0F1A14; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:24px; text-align:center; }
+.card { max-width: 360px; }
+h1 { font-size: 18px; margin: 0 0 8px; }
+p { font-size: 14px; color:#5A6B62; margin:0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>${message === "ok" ? "Pronto!" : "Não rolou"}</h1>
+  <p>${message === "ok" ? "Pode fechar essa janela." : safeReason || "Tenta de novo."}</p>
+</div>
+<script>
+  try {
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage(${JSON.stringify(`avicena-auth-${message}`)}, window.location.origin);
+    }
+  } catch (_) {}
+  setTimeout(function(){ try { window.close(); } catch(_){} }, 400);
+</script>
+</body>
+</html>`;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const isPopup = searchParams.get("popup") === "1";
 
   if (!code) {
+    if (isPopup) {
+      return new Response(popupHtml("fail", "callback sem code"), {
+        status: 400,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
     return NextResponse.redirect(`${origin}/?erro=callback-sem-code`);
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (isPopup) {
+    return new Response(popupHtml(error ? "fail" : "ok", error?.message), {
+      status: error ? 400 : 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+  }
 
   if (error) {
     return NextResponse.redirect(
