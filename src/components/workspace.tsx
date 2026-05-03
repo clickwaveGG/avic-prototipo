@@ -6,7 +6,6 @@ import {
   Plus,
   MessageSquare,
   Search,
-  Send,
   User,
   Stethoscope,
   BookOpen,
@@ -17,6 +16,8 @@ import {
   Sparkles,
   ArrowUp,
   Paperclip,
+  FileText,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Markdown from "react-markdown";
@@ -42,9 +43,45 @@ interface ChatSession {
   createdAt: number;
 }
 
-async function sendMessage(_messages: Message[]): Promise<string> {
-  await new Promise((r) => setTimeout(r, 900));
-  return "O Hipócrates ainda tá afiando o bisturi. Sobe o teu primeiro códice quando o upload abrir (Sprint 1.3) e a gente já consulta com página citada.";
+const MAX_PDF_BYTES = 32 * 1024 * 1024;
+
+type Attachment = {
+  name: string;
+  base64: string;
+  size: number;
+};
+
+async function sendMessage(
+  messages: Message[],
+  attachment: Attachment | null
+): Promise<string> {
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      pdfBase64: attachment?.base64,
+      pdfName: attachment?.name,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error ?? "Falha ao consultar Hipócrates");
+  }
+  return data.text as string;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.includes(",") ? result.split(",")[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 const SUGGESTED_PROMPTS = [
@@ -82,7 +119,10 @@ export function Workspace({
   const [input, setInput] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [attachment, setAttachment] = useState<Attachment | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayName =
     profile?.display_name?.trim() || email?.split("@")[0] || "estudante";
@@ -150,7 +190,8 @@ export function Workspace({
 
     try {
       const aiResponseContent = await sendMessage(
-        updatedSessions[sessionIndex].messages
+        updatedSessions[sessionIndex].messages,
+        attachment
       );
 
       const assistantMessage: Message = {
@@ -162,12 +203,46 @@ export function Workspace({
 
       updatedSessions[sessionIndex].messages.push(assistantMessage);
       setSessions([...updatedSessions]);
+      setAttachment(null);
     } catch (error) {
-      console.error(error);
+      const msg = error instanceof Error ? error.message : "erro desconhecido";
+      const errorMessage: Message = {
+        id: Math.random().toString(36).substring(7),
+        role: "assistant",
+        content: `Deu ruim: ${msg}`,
+        timestamp: Date.now(),
+      };
+      updatedSessions[sessionIndex].messages.push(errorMessage);
+      setSessions([...updatedSessions]);
     } finally {
       setIsLoading(false);
     }
   };
+
+  async function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploadError(null);
+
+    if (file.type !== "application/pdf") {
+      setUploadError("Só PDF por enquanto.");
+      return;
+    }
+    if (file.size > MAX_PDF_BYTES) {
+      setUploadError(
+        `Códice grande demais (${(file.size / 1024 / 1024).toFixed(1)}MB). Cap: 32MB.`
+      );
+      return;
+    }
+
+    try {
+      const base64 = await fileToBase64(file);
+      setAttachment({ name: file.name, base64, size: file.size });
+    } catch {
+      setUploadError("Não consegui ler o arquivo.");
+    }
+  }
 
   return (
     <div className="flex h-screen bg-white">
@@ -429,9 +504,40 @@ export function Workspace({
         {/* Input Area */}
         <div className="w-full bg-gradient-to-t from-white via-white to-transparent pb-8 pt-4 sticky bottom-0">
           <div className="max-w-3xl mx-auto px-4">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={handleFilePick}
+            />
+            {attachment && (
+              <div className="mb-2 flex items-center gap-2 bg-clinic-50 border border-clinic-100 rounded-2xl px-3 py-2 max-w-fit">
+                <FileText className="w-4 h-4 text-clinic-600 shrink-0" />
+                <span className="text-sm text-clinic-900 truncate max-w-[260px]">
+                  {attachment.name}
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  {(attachment.size / 1024 / 1024).toFixed(1)}MB
+                </span>
+                <button
+                  onClick={() => setAttachment(null)}
+                  className="p-1 hover:bg-clinic-100 rounded-full text-clinic-700 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            {uploadError && (
+              <div className="mb-2 text-xs text-red-600">{uploadError}</div>
+            )}
             <div className="relative bg-slate-100 rounded-[28px] p-2 pr-3 group focus-within:ring-2 focus-within:ring-clinic-500 transition-all">
               <div className="flex items-end gap-2 px-2">
-                <button className="p-2 text-slate-400 hover:text-clinic-600 transition-colors mb-0.5">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 text-slate-400 hover:text-clinic-600 transition-colors mb-0.5"
+                  title="Anexar códice (PDF)"
+                >
                   <Paperclip className="w-5 h-5" />
                 </button>
                 <textarea
