@@ -4,12 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/consultorio";
 
   if (!code) {
-    return NextResponse.redirect(
-      `${origin}/login?erro=callback-sem-code`
-    );
+    return NextResponse.redirect(`${origin}/?erro=callback-sem-code`);
   }
 
   const supabase = await createClient();
@@ -17,9 +14,9 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.redirect(
-      `${origin}/login?erro=${encodeURIComponent(error.message)}`
+      `${origin}/?erro=${encodeURIComponent(error.message)}`
     );
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return NextResponse.redirect(origin);
 }
