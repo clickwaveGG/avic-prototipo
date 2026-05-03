@@ -14,20 +14,19 @@ export async function signInWithGoogle() {
     provider: "google",
     options: {
       redirectTo: `${origin}/auth/callback`,
-      queryParams: {
-        access_type: "offline",
-        prompt: "consent",
-      },
+      queryParams: { access_type: "offline", prompt: "consent" },
     },
   });
 
-  if (error) {
-    redirect(`/login?erro=${encodeURIComponent(error.message)}`);
+  if (error || !data?.url) {
+    redirect(`/?erro=${encodeURIComponent(error?.message ?? "oauth-falhou")}`);
   }
 
-  if (data?.url) {
-    redirect(data.url);
-  }
+  redirect(data.url);
+}
 
-  redirect("/login?erro=oauth-sem-url");
+export async function signOut() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/");
 }
