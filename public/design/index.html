@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Avicena v2 · editorial, silencioso, sem cara de IA</title>
+<link rel="stylesheet" href="tokens.css" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #f0eee9; }
+  body { font-family: "Inter", system-ui, sans-serif; }
+
+  /* ===== v2 type system: mais editorial, menos UI ===== */
+  .v2 { font-family: var(--font-ui); color: var(--ink); background: var(--bg); font-feature-settings: "ss01", "cv11"; }
+  .v2 .serif { font-family: var(--font-display); }
+  .v2 .mono { font-family: var(--font-mono); }
+  .v2 * { box-sizing: border-box; }
+  .v2 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; padding: 0; }
+  .v2 .scroll { overflow: auto; scrollbar-width: none; }
+  .v2 .scroll::-webkit-scrollbar { width: 0; height: 0; }
+
+  /* Marginália — a alma do v2 */
+  .v2-margin-num {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--accent);
+    font-size: 0.72em;
+    vertical-align: super;
+    line-height: 0;
+    margin-left: 1px;
+    cursor: pointer;
+    transition: color 120ms;
+  }
+  .v2-margin-num:hover { color: #6F5417; }
+
+  /* Marginália lateral (PDF reveal) */
+  .v2-margin-note {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-muted);
+    border-left: 1px solid var(--accent);
+    padding: 0 0 0 14px;
+  }
+  .v2-margin-note .num {
+    font-style: italic;
+    color: var(--accent);
+    margin-right: 6px;
+    font-weight: 500;
+  }
+  .v2-margin-note .pp {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: 0.02em;
+  }
+
+  /* Linha de assinatura sutil */
+  .v2-rule { height: 1px; background: var(--border); border: 0; margin: 0; }
+  .v2-rule-thin { height: 1px; background: rgba(168, 159, 139, 0.4); border: 0; margin: 0; }
+
+  /* Hairline button */
+  .v2-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; font-size: 12px;
+    border: 1px solid var(--border); border-radius: 999px;
+    color: var(--ink-muted);
+    transition: all 120ms;
+  }
+  .v2-pill:hover { border-color: var(--ink-muted); color: var(--ink); }
+
+  /* Composer minimalista (sem caixa) */
+  .v2-composer {
+    border-top: 1px solid var(--border);
+    padding: 18px 0 22px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .v2-composer-prompt {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--ink-faint);
+    font-size: 17px;
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  /* Inkmark — a "marca" da Avicena no editorial */
+  .v2-inkmark {
+    display: inline-block;
+    width: 14px; height: 14px;
+    background: var(--brand);
+    border-radius: 50%;
+    position: relative;
+    vertical-align: middle;
+  }
+  .v2-inkmark::after {
+    content: '';
+    position: absolute; inset: 3px;
+    border-radius: 50%;
+    background: var(--brand-glow);
+    opacity: 0.5;
+  }
+
+  /* Códice "tomo" — capa mais tipográfica, menos AI-procedural */
+  .v2-tome {
+    aspect-ratio: 2 / 3;
+    background: var(--bg-elev-1);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--brand);
+    border-radius: 1px 4px 4px 1px;
+    padding: 18px 14px 14px 14px;
+    display: flex; flex-direction: column;
+    box-shadow: 1px 1px 0 rgba(15, 26, 23, 0.04);
+    transition: transform 220ms cubic-bezier(.2,.7,.3,1), box-shadow 220ms;
+    cursor: pointer;
+    position: relative;
+  }
+  .v2-tome:hover {
+    transform: translateY(-3px) translateX(1px);
+    box-shadow: 3px 4px 0 rgba(15, 26, 23, 0.06), 0 6px 18px rgba(15, 26, 23, 0.08);
+  }
+  .v2-tome-cat {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 10.5px;
+    color: var(--accent);
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+  }
+  .v2-tome-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+    flex: 1;
+  }
+  .v2-tome-meta {
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .v2-tome-glyph {
+    position: absolute;
+    top: 14px; right: 12px;
+    width: 18px; height: 18px;
+    color: var(--border-strong);
+    opacity: 0.6;
+  }
+
+  /* Resposta como prosa, não chat */
+  .v2-prose {
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--ink);
+    max-width: 62ch;
+    font-family: var(--font-ui);
+  }
+  .v2-prose p { margin: 0 0 18px; }
+  .v2-prose p:last-child { margin-bottom: 0; }
+  .v2-prose strong { font-weight: 600; }
+  .v2-prose em { font-family: var(--font-display); font-style: italic; }
+  .v2-prose .drop {
+    font-family: var(--font-display);
+    font-size: 56px;
+    font-weight: 600;
+    line-height: 0.9;
+    float: left;
+    margin: 6px 10px -6px 0;
+    color: var(--brand);
+  }
+
+  /* Question echo — pergunta da Marina aparece como uma marginalia */
+  .v2-echo {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.3;
+    color: var(--ink-muted);
+    letter-spacing: -0.01em;
+    border-left: 2px solid var(--brand-glow);
+    padding-left: 18px;
+    margin-bottom: 28px;
+  }
+  .v2-echo::before {
+    content: '— ';
+    color: var(--brand);
+  }
+
+  /* Topbar enxuto */
+  .v2-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .v2-top-brand {
+    display: flex; align-items: baseline; gap: 8px;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .v2-top-brand .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); align-self: center; }
+
+  /* Quiet card — sem rounded extravagante, sem shadow forte */
+  .v2-card {
+    background: var(--bg-elev-1);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+  }
+
+  /* Quiz item editorial */
+  .v2-q { padding: 22px 0; border-top: 1px solid var(--border); }
+  .v2-q:first-of-type { border-top: none; }
+  .v2-q-num {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .v2-q-stem {
+    font-size: 16px; line-height: 1.65; color: var(--ink); margin-bottom: 14px; max-width: 62ch;
+  }
+  .v2-q-alt {
+    display: grid; grid-template-columns: 24px 1fr; gap: 10px;
+    padding: 6px 0;
+    font-size: 14.5px; line-height: 1.55; color: var(--ink-muted);
+    border-bottom: 1px dotted transparent;
+  }
+  .v2-q-alt .l { font-family: var(--font-display); font-style: italic; color: var(--ink-faint); }
+  .v2-q-alt.correct .l { color: var(--brand); }
+  .v2-q-alt.correct { color: var(--ink); }
+
+  /* Aurora ultra-sutil */
+  .v2-aurora {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(40% 30% at 15% 25%, rgba(63, 166, 140, 0.06), transparent 70%),
+      radial-gradient(35% 25% at 90% 80%, rgba(212, 171, 55, 0.04), transparent 70%);
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+  const { useState } = React;
+
+  /* ============================================================
+     PEQUENOS COMPONENTES — sem avatares, sem bubbles, sem sparkles
+     ============================================================ */
+
+  const Inkmark = () => <span className="v2-inkmark" aria-hidden />;
+  const Wordmark = () => (
+    <span className="v2-top-brand">
+      <Inkmark />
+      Avicena
+    </span>
+  );
+
+  // Marginália numerada — substitui o citation pill
+  const M = ({ n, onClick }) => (
+    <sup className="v2-margin-num" onClick={onClick} role="button" tabIndex={0}>{n}</sup>
+  );
+
+  // Tomo (códice) — capa tipográfica, NÃO procedural-AI
+  const Tome = ({ cat, title, edition, pages, last, glyph }) => (
+    <div className="v2-tome">
+      {glyph && (
+        <svg className="v2-tome-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
+          {glyph}
+        </svg>
+      )}
+      <div className="v2-tome-cat">{cat}</div>
+      <div className="v2-tome-title">{title}</div>
+      <div className="v2-tome-meta">
+        <span>{edition}</span>
+        <span>{last}</span>
+      </div>
+    </div>
+  );
+
+  // Glifos discretos por área — não procedurais
+  const G_CARDIO = <><path d="M12 21s-7-4.5-7-11a4 4 0 0 1 7-2.65A4 4 0 0 1 19 10c0 6.5-7 11-7 11Z"/></>;
+  const G_PATO = <><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></>;
+  const G_FARMA = <><path d="M10 4 4 10a4 4 0 0 0 5.66 5.66l6-6A4 4 0 0 0 10 4Z"/><path d="m8 12 4 4"/></>;
+  const G_CIR = <><path d="m4 4 4 4-4 4M16 16l4-4-4-4M12 4v16"/></>;
+  const G_CLIN = <><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M9 9h6M9 12h6M9 15h4"/></>;
+  const G_HISTO = <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></>;
+
+  /* ============================================================
+     01 — CONSULTÓRIO (personalizado, silencioso)
+     ============================================================ */
+  const Consultorio = ({ mobile = false }) => (
+    <div className="v2 scroll" style={{ height: '100%', background: 'var(--bg)' }}>
+      <div style={{ maxWidth: mobile ? '100%' : 920, margin: '0 auto', padding: mobile ? '0 20px' : '0 56px' }}>
+
+        {/* Top */}
+        <div className="v2-top">
+          <Wordmark />
+          <div style={{ display: 'flex', alignItems: 'center', gap: mobile ? 14 : 22, fontSize: 13, color: 'var(--ink-muted)' }}>
+            <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)' }}>sex · 23:47</span>
+            {!mobile && <button className="v2-pill">prontuário</button>}
+            <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'transparent', border: '1px solid var(--border)', color: 'var(--ink-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 500 }}>M</span>
+          </div>
+        </div>
+
+        {/* Cumprimento — sem "Bem-vindo!", sem emoji */}
+        <div style={{ padding: mobile ? '40px 0 28px' : '72px 0 48px' }}>
+          <div className="serif" style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--accent)', letterSpacing: '0.02em', marginBottom: 14 }}>
+            sexta-feira, 23h47
+          </div>
+          <h1 className="serif" style={{ fontSize: mobile ? 36 : 58, lineHeight: 1.02, fontWeight: 500, letterSpacing: '-0.025em', margin: 0, color: 'var(--ink)' }}>
+            Boa noite, Marina.<br/>
+            <span style={{ fontStyle: 'italic', color: 'var(--ink-muted)' }}>Faltam 47 horas até</span><br/>
+            <span style={{ color: 'var(--brand)' }}>Cardio.</span>
+          </h1>
+
+          <p style={{ fontSize: 16, color: 'var(--ink-muted)', lineHeight: 1.6, marginTop: 24, maxWidth: 520 }}>
+            Parou ontem no <em style={{ fontFamily: 'var(--font-display)' }}>cap. 12 do Porto</em>, na fisiopato da
+            IC esquerda. Continua dali, ou começa por outro lado?
+          </p>
+        </div>
+
+        {/* Last reading — featured, NÃO em formato de card chamativo */}
+        <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '180px 1fr', gap: mobile ? 16 : 32, paddingBottom: 36, borderBottom: '1px solid var(--border)', marginBottom: 36 }}>
+          <div style={{ width: mobile ? 140 : 'auto' }}>
+            <Tome cat="cardio" title="Porto" edition="Semiologia · 8ª" last="ontem" glyph={G_CARDIO} />
+          </div>
+          <div style={{ paddingTop: mobile ? 0 : 12 }}>
+            <div className="serif" style={{ fontSize: 11, fontStyle: 'italic', color: 'var(--ink-faint)', letterSpacing: '0.04em', marginBottom: 8 }}>
+              última anamnese · 21:18
+            </div>
+            <div className="serif" style={{ fontSize: 22, lineHeight: 1.3, fontWeight: 500, color: 'var(--ink)', marginBottom: 14, maxWidth: 540, letterSpacing: '-0.01em' }}>
+              <span style={{ color: 'var(--ink-faint)' }}>"</span>resume fisiopato de IC esquerda e me dá 5 questões pra prova segunda<span style={{ color: 'var(--ink-faint)' }}>"</span>
+            </div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button className="v2-pill" style={{ color: 'var(--brand)', borderColor: 'var(--brand-soft)' }}>retomar →</button>
+              <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)' }}>pp. 437 · 438 · 441</span>
+              <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>·</span>
+              <span style={{ fontSize: 12, color: 'var(--ink-muted)' }}>3 questões respondidas</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Estante */}
+        <div style={{ paddingBottom: 60 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 22 }}>
+            <div className="serif" style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.01em' }}>
+              Estante <span style={{ color: 'var(--ink-faint)', fontStyle: 'italic' }}>· 8 tomos</span>
+            </div>
+            {!mobile && (
+              <div style={{ fontSize: 12.5, color: 'var(--ink-faint)', display: 'flex', gap: 18 }}>
+                <span style={{ color: 'var(--ink)' }}>recentes</span>
+                <span>área</span>
+                <span>+ novo</span>
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: mobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: mobile ? 14 : 24 }}>
+            <Tome cat="cardio" title="Porto" edition="Semiologia · 8ª" last="ontem" glyph={G_CARDIO} />
+            <Tome cat="patologia" title="Robbins" edition="10ª ed · Kumar" last="qua" glyph={G_PATO} />
+            <Tome cat="farma" title="Goodman" edition="& Gilman · 13ª" last="qua" glyph={G_FARMA} />
+            <Tome cat="cardio" title="Tratado SBC" edition="Cardiologia · 2ª" last="4d" glyph={G_CARDIO} />
+            <Tome cat="cardio" title="Diretriz IC" edition="AHA/SBC · 2022" last="4d" glyph={G_CARDIO} />
+            <Tome cat="cirurgia" title="Sabiston" edition="Cirurgia · 21ª" last="2sem" glyph={G_CIR} />
+            <Tome cat="clínica" title="Cecil" edition="Tratado MI · 26ª" last="1mês" glyph={G_CLIN} />
+            <Tome cat="histo" title="Junqueira" edition="Atlas · 13ª" last="1mês" glyph={G_HISTO} />
+          </div>
+        </div>
+
+        <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', textAlign: 'center', paddingBottom: 32, fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>
+          Material de estudo.
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ============================================================
+     02 — ANAMNESE (resposta editorial, marginalia, SEM chat-bubble)
+     ============================================================ */
+  const Anamnese = ({ mobile = false }) => (
+    <div className="v2 scroll" style={{ height: '100%', background: 'var(--bg)' }}>
+      <div style={{ maxWidth: mobile ? '100%' : 1080, margin: '0 auto', padding: mobile ? '0 20px' : '0 56px' }}>
+
+        {/* Top — minimal: tomo lendo + breadcrumb */}
+        <div className="v2-top" style={{ paddingTop: 22, paddingBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 13, color: 'var(--ink-muted)' }}>
+            <Wordmark />
+            <span style={{ color: 'var(--border-strong)' }}>/</span>
+            <span className="serif" style={{ fontStyle: 'italic', fontSize: 15, color: 'var(--ink)' }}>Porto</span>
+            <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>cap. 12 · insuf. cardíaca</span>
+          </div>
+          {!mobile && (
+            <div style={{ display: 'flex', gap: 10, fontSize: 12.5, color: 'var(--ink-faint)' }}>
+              <button className="v2-pill">↩︎ prontuário</button>
+              <button className="v2-pill">+ nova anamnese</button>
+            </div>
+          )}
+        </div>
+
+        {/* Eco da pergunta */}
+        <div style={{ padding: mobile ? '32px 0 20px' : '56px 0 32px' }}>
+          <div className="v2-echo">
+            resume fisiopato de IC esquerda
+          </div>
+        </div>
+
+        {/* Resposta com marginalia lateral */}
+        <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 240px', gap: mobile ? 24 : 48, paddingBottom: 48 }}>
+          {/* Prosa */}
+          <article className="v2-prose">
+            <p>
+              <span className="drop">A</span> insuficiência cardíaca esquerda<M n="1" /> é a incapacidade do ventrículo
+              esquerdo de manter débito cardíaco adequado às demandas teciduais. Surge, na maioria das vezes, como
+              desfecho tardio de duas histórias longas: a <em>doença coronariana</em> e a <em>hipertensão arterial</em>.
+            </p>
+            <p>
+              Quando o débito começa a falhar, o organismo improvisa: o eixo simpático e o sistema
+              renina-angiotensina-aldosterona<M n="2" /> são acionados em sequência. A intenção é boa — manter perfusão
+              dos órgãos. O preço, cobrado em anos, é alto: retenção de sódio e água, vasoconstrição persistente,
+              remodelamento ventricular.
+            </p>
+            <p>
+              Daí brota a tríade clínica<M n="3" /> que cai na prova: <strong>dispneia aos esforços</strong>,
+              <strong> ortopneia</strong>, <strong>dispneia paroxística noturna</strong>. No exame, a <span className="mono" style={{ fontSize: 14, color: 'var(--brand)', fontWeight: 500 }}>B3</span> denuncia o ventrículo dilatado;
+              estertores em bases sussurram a congestão.
+            </p>
+            <p style={{ color: 'var(--ink-muted)', fontStyle: 'italic', fontFamily: 'var(--font-display)', fontSize: 18 }}>
+              Aqui está o paradoxo terapêutico que costuma cair: o mecanismo que salva a curto prazo é o mesmo que mata
+              a longo. Por isso o tratamento moderno bloqueia o SRAA com IECA/BRA/ARNi e amansa o simpático com
+              betabloqueador — alívio, não cura.
+            </p>
+          </article>
+
+          {/* Marginália */}
+          {!mobile && (
+            <aside style={{ paddingTop: 8 }}>
+              <div className="serif" style={{ fontSize: 11, fontStyle: 'italic', color: 'var(--ink-faint)', letterSpacing: '0.05em', marginBottom: 16, textTransform: 'lowercase' }}>
+                marginália
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                <div className="v2-margin-note">
+                  <span className="num">1</span>Definição operacional. O Porto distingue da IC com FE preservada — vale revisar antes da prova.
+                  <span className="pp">Porto · pp. 437</span>
+                </div>
+                <div className="v2-margin-note">
+                  <span className="num">2</span>SRAA + simpático: olhe a figura 12.4. É exatamente o ponto que o examinador transforma em pegadinha.
+                  <span className="pp">Porto · pp. 438</span>
+                </div>
+                <div className="v2-margin-note">
+                  <span className="num">3</span>Tríade clássica. DPN é a mais específica das três — quase patognomônica de IC esquerda.
+                  <span className="pp">Porto · pp. 439–441</span>
+                </div>
+              </div>
+              <hr className="v2-rule-thin" style={{ margin: '24px 0' }} />
+              <div className="serif" style={{ fontSize: 11, fontStyle: 'italic', color: 'var(--ink-faint)', letterSpacing: '0.05em', marginBottom: 10 }}>
+                a seguir
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button className="v2-pill" style={{ justifyContent: 'flex-start', textAlign: 'left' }}>5 questões sobre isso</button>
+                <button className="v2-pill" style={{ justifyContent: 'flex-start', textAlign: 'left' }}>diferenciar de IC direita</button>
+                <button className="v2-pill" style={{ justifyContent: 'flex-start', textAlign: 'left' }}>dose furosemida</button>
+              </div>
+            </aside>
+          )}
+        </div>
+
+        {/* Composer minimalista — sem caixa, sem botão grande */}
+        <div className="v2-composer">
+          <span className="mono" style={{ color: 'var(--brand)', fontSize: 16 }}>—</span>
+          <span className="v2-composer-prompt">próxima anamnese…</span>
+          {!mobile && (
+            <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)', padding: '3px 8px', border: '1px solid var(--border)', borderRadius: 4 }}>↵</span>
+          )}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--ink-faint)', fontStyle: 'italic', textAlign: 'center', padding: '16px 0 32px', fontFamily: 'var(--font-display)' }}>
+          Material de estudo.
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ============================================================
+     03 — LANDING (editorial, manifesto, não SaaS-marketing)
+     ============================================================ */
+  const Landing = ({ mobile = false }) => (
+    <div className="v2 scroll" style={{ height: '100%', background: 'var(--bg)', position: 'relative' }}>
+      <div className="v2-aurora" />
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: mobile ? '100%' : 1080, margin: '0 auto', padding: mobile ? '0 20px' : '0 56px' }}>
+
+        <div className="v2-top">
+          <Wordmark />
+          {!mobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 28, fontSize: 13, color: 'var(--ink-muted)' }}>
+              <a>manifesto</a>
+              <a>juramento</a>
+              <a style={{ color: 'var(--ink)' }}>entrar</a>
+            </div>
+          )}
+        </div>
+
+        {/* Hero — editorial, não marketing */}
+        <div style={{ padding: mobile ? '64px 0 40px' : '120px 0 88px', position: 'relative' }}>
+          <div className="serif" style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--accent)', letterSpacing: '0.04em', marginBottom: 22 }}>
+            um companheiro de estudo · para quem cura
+          </div>
+
+          <h1 className="serif" style={{
+            fontSize: mobile ? 48 : 96,
+            lineHeight: 0.98,
+            fontWeight: 500,
+            letterSpacing: '-0.035em',
+            margin: 0, maxWidth: 880,
+          }}>
+            Sobe o livro.<br/>
+            <span style={{ fontStyle: 'italic', color: 'var(--ink-muted)' }}>Pergunta com</span><br/>
+            <span style={{ color: 'var(--brand)' }}>tua voz.</span>
+          </h1>
+
+          <p style={{
+            fontSize: mobile ? 17 : 21, lineHeight: 1.55, color: 'var(--ink-muted)',
+            marginTop: 36, maxWidth: 560,
+            fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 400,
+          }}>
+            Avicena lê o teu Porto, o teu Robbins, o teu Goodman. Devolve resposta em prosa, com a página
+            exata anotada à margem. Sem cara de chatbot, sem "potencialize seus estudos".
+          </p>
+
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 40, flexWrap: 'wrap' }}>
+            <button style={{ padding: '14px 24px', background: 'var(--brand)', color: 'var(--bg)', borderRadius: 4, fontSize: 15, fontWeight: 500, letterSpacing: '-0.005em' }}>
+              começar grátis →
+            </button>
+            <span className="serif" style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--ink-faint)' }}>
+              50 anamneses por dia, sem cartão.
+            </span>
+          </div>
+        </div>
+
+        <hr className="v2-rule" />
+
+        {/* Manifesto em 3 partes — não "features" */}
+        <div style={{ padding: mobile ? '48px 0' : '88px 0', display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: mobile ? 36 : 56 }}>
+          {[
+            { num: 'i', t: 'cita a fonte', d: 'Toda resposta vem com a página exata anotada na margem. Se quiser, abre o trecho original. Confia, ou descarta.' },
+            { num: 'ii', t: 'fala como amiga de turma', d: '"bora resumir fisiopato de IC?" funciona. "Potencialize seu aprendizado" não funciona aqui — promessa nossa.' },
+            { num: 'iii', t: 'sabe o seu lugar', d: 'É ferramenta de estudo. Não diagnostica, não prescreve, não substitui ninguém de jaleco. Está escrito no juramento.' },
+          ].map(p => (
+            <div key={p.num}>
+              <div className="serif" style={{ fontSize: 14, fontStyle: 'italic', color: 'var(--accent)', marginBottom: 12, letterSpacing: '0.04em' }}>
+                {p.num}.
+              </div>
+              <div className="serif" style={{ fontSize: 26, fontWeight: 500, lineHeight: 1.15, letterSpacing: '-0.015em', marginBottom: 14, color: 'var(--ink)' }}>
+                {p.t}
+              </div>
+              <div style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--ink-muted)' }}>
+                {p.d}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <hr className="v2-rule" />
+
+        {/* Bottom */}
+        <div style={{ padding: mobile ? '32px 0' : '48px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'var(--ink-faint)', flexWrap: 'wrap', gap: 16 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic' }}>
+            Avicena · São Paulo, 2026 · um café e um estetoscópio
+          </span>
+          <span>juramento · privacidade · manifesto</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ============================================================
+     04 — QUIZAR (editorial, lista numerada, não cards de modal)
+     ============================================================ */
+  const Quizar = ({ mobile = false }) => (
+    <div className="v2 scroll" style={{ height: '100%', background: 'var(--bg)' }}>
+      <div style={{ maxWidth: mobile ? '100%' : 760, margin: '0 auto', padding: mobile ? '0 20px' : '0 56px' }}>
+
+        <div className="v2-top" style={{ paddingTop: 22, paddingBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 13, color: 'var(--ink-muted)' }}>
+            <Wordmark />
+            <span style={{ color: 'var(--border-strong)' }}>/</span>
+            <span className="serif" style={{ fontStyle: 'italic', fontSize: 15, color: 'var(--ink)' }}>Porto</span>
+          </div>
+          {!mobile && <button className="v2-pill">↩︎ prontuário</button>}
+        </div>
+
+        <div style={{ padding: mobile ? '32px 0 24px' : '56px 0 32px' }}>
+          <div className="v2-echo">5 questões · fisiopato IC esquerda · estilo Revalida</div>
+        </div>
+
+        <div className="v2-prose" style={{ paddingBottom: 24, maxWidth: '100%' }}>
+          <p style={{ color: 'var(--ink-muted)', fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 17 }}>
+            Montadas a partir do <em>cap. 12 do Porto</em>. Tenta resolver antes de abrir o gabarito.
+            Cada questão referencia o trecho original na margem.
+          </p>
+        </div>
+
+        <hr className="v2-rule" />
+
+        {/* Questões */}
+        <div style={{ paddingBottom: 32 }}>
+          <div className="v2-q">
+            <div className="v2-q-num">i · ortopneia</div>
+            <div className="v2-q-stem">
+              Paciente de 67 anos, hipertenso há 20 anos, evolui com dispneia aos médios esforços, ortopneia e edema
+              vespertino de MMII. Ao exame: B3, estertores em terço inferior de hemitórax e ictus desviado.
+              <strong> Qual o mecanismo fisiopatológico que melhor explica a ortopneia desse paciente?</strong>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div className="v2-q-alt"><span className="l">a.</span><span>Diminuição da pré-carga ao decúbito por redução do retorno venoso.</span></div>
+              <div className="v2-q-alt correct"><span className="l">b.</span><span>Redistribuição volêmica com aumento do retorno venoso e congestão pulmonar.</span></div>
+              <div className="v2-q-alt"><span className="l">c.</span><span>Aumento da contratilidade ventricular esquerda em posição supina.</span></div>
+              <div className="v2-q-alt"><span className="l">d.</span><span>Broncoespasmo desencadeado por compressão brônquica direta.</span></div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingTop: 12, borderTop: '1px dotted var(--border)', fontSize: 13, color: 'var(--ink-muted)' }}>
+              <span className="serif" style={{ fontStyle: 'italic', color: 'var(--brand)' }}>gabarito · b.</span>
+              <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)' }}>Porto · pp. 439</span>
+              <span style={{ marginLeft: 'auto', color: 'var(--ink-faint)', fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>
+                em decúbito o sangue dos MMII retorna ao coração; o VE comprometido não ejeta e represa no pulmão.
+              </span>
+            </div>
+          </div>
+
+          <div className="v2-q">
+            <div className="v2-q-num">ii · SRAA</div>
+            <div className="v2-q-stem">
+              Sobre a ativação do sistema renina-angiotensina-aldosterona na insuficiência cardíaca, é correto afirmar:
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div className="v2-q-alt"><span className="l">a.</span><span>A aldosterona promove diurese e natriurese como mecanismo protetor.</span></div>
+              <div className="v2-q-alt"><span className="l">b.</span><span>A angiotensina II é vasodilatadora, reduzindo a pós-carga ventricular.</span></div>
+              <div className="v2-q-alt correct"><span className="l">c.</span><span>A retenção de sódio e água é benéfica a curto prazo, mas deletéria a longo prazo.</span></div>
+              <div className="v2-q-alt"><span className="l">d.</span><span>A inibição do SRAA é contraindicada em pacientes com IC sintomática.</span></div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingTop: 12, borderTop: '1px dotted var(--border)', fontSize: 13, color: 'var(--ink-muted)' }}>
+              <span className="serif" style={{ fontStyle: 'italic', color: 'var(--brand)' }}>gabarito · c.</span>
+              <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)' }}>Porto · pp. 438</span>
+            </div>
+          </div>
+
+          <div className="v2-q">
+            <div className="v2-q-num">iii · B3</div>
+            <div className="v2-q-stem">Qual achado semiológico tem MAIOR especificidade para insuficiência cardíaca esquerda?</div>
+            <div style={{ marginBottom: 14 }}>
+              <div className="v2-q-alt"><span className="l">a.</span><span>Edema bilateral de membros inferiores.</span></div>
+              <div className="v2-q-alt"><span className="l">b.</span><span>Turgência jugular patológica.</span></div>
+              <div className="v2-q-alt correct"><span className="l">c.</span><span>Terceira bulha (B3).</span></div>
+              <div className="v2-q-alt"><span className="l">d.</span><span>Hepatomegalia dolorosa.</span></div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingTop: 12, borderTop: '1px dotted var(--border)', fontSize: 13, color: 'var(--ink-muted)' }}>
+              <span className="serif" style={{ fontStyle: 'italic', color: 'var(--brand)' }}>gabarito · c.</span>
+              <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)' }}>Porto · pp. 441</span>
+            </div>
+          </div>
+
+          <div style={{ padding: '20px 0 0', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button className="v2-pill">+ mais 5 questões</button>
+            <button className="v2-pill">salvar no prontuário</button>
+            <button className="v2-pill">baixar pdf</button>
+          </div>
+        </div>
+
+        <div style={{ fontSize: 11, color: 'var(--ink-faint)', fontStyle: 'italic', textAlign: 'center', padding: '0 0 32px', fontFamily: 'var(--font-display)' }}>
+          Material de estudo · não substitui prova oficial.
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ============================================================
+     00 — ÁTRIO (homepage / centro de acesso)
+     Saudação contextual + "continuar" + 6 ferramentas + áreas do curso
+     + prontuário recente. O "consultório" expandido pra ser hub.
+     ============================================================ */
+
+  // SVG glyph helpers — pequenos, finos, editoriais
+  const Glyph = ({ children, size = 22, stroke = 1.3 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {children}
+    </svg>
+  );
+
+  // Glyphs das 6 ferramentas
+  const F_RESUMIR = <><path d="M4 5h12M4 9h16M4 13h12M4 17h8"/></>;
+  const F_EXPLICAR = <><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c1 1 1.5 2 1.5 3.5h5c0-1.5.5-2.5 1.5-3.5A6 6 0 0 0 12 3Z"/></>;
+  const F_QUIZ = <><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5M12 17v.01"/></>;
+  const F_CASO = <><circle cx="12" cy="8" r="3.5"/><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></>;
+  const F_DIFF = <><path d="M5 5h6v14H5zM13 5h6v14h-6zM9 9l-2 2 2 2M15 9l2 2-2 2"/></>;
+  const F_DOSE = <><path d="M8 4h8l-1 4H9zM7 8h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5zM12 16v5M9 21h6"/></>;
+
+  // Glyphs das áreas — anatômicos discretos
+  const A_CARDIO = <><path d="M12 21s-7-4.5-7-11a4 4 0 0 1 7-2.65A4 4 0 0 1 19 10c0 6.5-7 11-7 11Z"/></>;
+  const A_PNEUMO = <><path d="M12 3v10M7 6c-1 4-2 9-1 12 2 2 5 .5 6-2V6M17 6c1 4 2 9 1 12-2 2-5 .5-6-2"/></>;
+  const A_NEURO = <><path d="M9 4a3 3 0 0 0-3 3v1a3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 3 3 3 0 0 0 3-2 3 3 0 0 0 3 2 3 3 0 0 0 3-3 3 3 0 0 0 2-5 3 3 0 0 0-2-5V7a3 3 0 0 0-3-3 3 3 0 0 0-3 2 3 3 0 0 0-3-2Z"/></>;
+  const A_GASTRO = <><path d="M9 4c-2 2-3 5-3 8s1 6 3 8M9 12c2 0 3-2 3-4M14 4c1 2 1 4 1 6 0 4-2 8-5 10M19 12h-4"/></>;
+  const A_NEFRO = <><path d="M12 3c-4 0-7 3-7 7 0 5 5 11 7 11s7-6 7-11c0-4-3-7-7-7zM12 8v6M9 11h6"/></>;
+  const A_ENDO = <><circle cx="12" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M12 8.5v7M9 12h6"/></>;
+  const A_HEMATO = <><path d="M12 3c-3 4-6 7-6 11a6 6 0 0 0 12 0c0-4-3-7-6-11Z"/></>;
+  const A_INFECTO = <><circle cx="12" cy="12" r="5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></>;
+  const A_PEDIA = <><circle cx="12" cy="9" r="4"/><path d="M8 9c0-1 1-2 2-2M14 13c2 1 3 3 3 5v3H7v-3c0-2 1-4 3-5"/></>;
+  const A_GO = <><circle cx="12" cy="8" r="4"/><path d="M12 12v9M9 18h6"/></>;
+  const A_CIR = <><path d="M3 14 14 3l3 3-11 11-3 1 1-3z M13 4l3 3M9 19l-2-2"/></>;
+  const A_PATO = <><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 4v16M4 12h16"/></>;
+  const A_FARMA = <><path d="M10 4 4 10a4 4 0 0 0 5.66 5.66l6-6A4 4 0 0 0 10 4ZM7 7l5 5"/></>;
+  const A_PSIQ = <><path d="M8 21v-4a4 4 0 0 1-2-7V7a4 4 0 0 1 8 0 4 4 0 0 1 4 4v3M14 17h4v4"/></>;
+  const A_DERMA = <><path d="M5 12c0-4 3-7 7-7s7 3 7 7c0 3-2 5-4 5-1 0-2-1-2-2 0-1 1-2 2-2"/><circle cx="9" cy="11" r="0.8" fill="currentColor"/><circle cx="14" cy="14" r="0.8" fill="currentColor"/></>;
+  const A_SAUDE = <><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/></>;
+
+  // Tile de ferramenta — fino, hairline
+  const Tool = ({ glyph, label, hint, hot }) => (
+    <button style={{
+      textAlign: 'left',
+      padding: '18px 16px',
+      background: hot ? 'var(--brand)' : 'var(--bg-elev-1)',
+      border: '1px solid',
+      borderColor: hot ? 'var(--brand)' : 'var(--border)',
+      borderRadius: 4,
+      color: hot ? 'var(--bg)' : 'var(--ink)',
+      display: 'flex', flexDirection: 'column', gap: 14,
+      transition: 'all 180ms cubic-bezier(.2,.7,.3,1)',
+      cursor: 'pointer',
+      minHeight: 124,
+    }}
+    onMouseOver={e => { if (!hot) { e.currentTarget.style.borderColor = 'var(--ink-muted)'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+    onMouseOut={e => { if (!hot) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = ''; } }}>
+      <Glyph size={20} stroke={1.3}>{glyph}</Glyph>
+      <div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 500, letterSpacing: '-0.01em', lineHeight: 1.1, marginBottom: 4 }}>
+          {label}
+        </div>
+        <div style={{ fontSize: 12.5, lineHeight: 1.4, color: hot ? 'rgba(244,241,234,0.7)' : 'var(--ink-muted)' }}>
+          {hint}
+        </div>
+      </div>
+    </button>
+  );
+
+  // Card de área — hairline, com indicador de atividade
+  const Area = ({ glyph, name, tomes, last, active, prova, progress }) => (
+    <button style={{
+      textAlign: 'left',
+      padding: '16px 16px 14px',
+      background: 'var(--bg-elev-1)',
+      border: '1px solid',
+      borderColor: active ? 'var(--brand-soft)' : 'var(--border)',
+      borderLeftWidth: active ? 3 : 1,
+      borderLeftColor: active ? 'var(--brand)' : 'var(--border)',
+      borderRadius: 3,
+      display: 'flex', flexDirection: 'column', gap: 12,
+      transition: 'all 180ms',
+      cursor: 'pointer',
+      position: 'relative',
+    }}
+    onMouseOver={e => { e.currentTarget.style.background = 'var(--bg-elev-2)'; }}
+    onMouseOut={e => { e.currentTarget.style.background = 'var(--bg-elev-1)'; }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Glyph size={18} stroke={1.2}>{glyph}</Glyph>
+        {prova && (
+          <span className="serif" style={{ fontSize: 10.5, fontStyle: 'italic', color: 'var(--alert)', letterSpacing: '0.04em' }}>
+            prova · seg
+          </span>
+        )}
+      </div>
+      <div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 500, color: 'var(--ink)', letterSpacing: '-0.01em', lineHeight: 1.1, marginBottom: 4 }}>
+          {name}
+        </div>
+        <div style={{ fontSize: 11.5, color: 'var(--ink-faint)', display: 'flex', gap: 8 }}>
+          <span>{tomes} tomos</span>
+          <span>·</span>
+          <span>{last}</span>
+        </div>
+      </div>
+      {progress != null && (
+        <div style={{ height: 2, background: 'var(--bg-elev-2)', borderRadius: 1, marginTop: 4, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${progress}%`, background: active ? 'var(--brand)' : 'var(--border-strong)' }} />
+        </div>
+      )}
+    </button>
+  );
+
+  const Atrio = ({ mobile = false }) => {
+    const areas = [
+      { g: A_CARDIO, n: 'Cardiologia', t: 5, l: 'ontem', active: true, prova: true, p: 68 },
+      { g: A_PNEUMO, n: 'Pneumologia', t: 3, l: '3 dias', p: 42 },
+      { g: A_NEURO, n: 'Neurologia', t: 4, l: '1 sem', p: 28 },
+      { g: A_GASTRO, n: 'Gastroenterologia', t: 4, l: '1 sem', p: 51 },
+      { g: A_NEFRO, n: 'Nefrologia', t: 2, l: '2 sem', p: 18 },
+      { g: A_ENDO, n: 'Endocrinologia', t: 3, l: '2 sem', p: 33 },
+      { g: A_HEMATO, n: 'Hematologia', t: 2, l: '3 sem', p: 22 },
+      { g: A_INFECTO, n: 'Infectologia', t: 3, l: '1 mês', p: 45 },
+      { g: A_PEDIA, n: 'Pediatria', t: 4, l: '1 mês', p: 12 },
+      { g: A_GO, n: 'Gineco & Obstetrícia', t: 3, l: '1 mês', p: 8 },
+      { g: A_CIR, n: 'Cirurgia', t: 4, l: '6 sem', p: 24 },
+      { g: A_PATO, n: 'Patologia', t: 2, l: '6 sem', p: 64 },
+      { g: A_FARMA, n: 'Farmacologia', t: 3, l: '2 sem', p: 38 },
+      { g: A_PSIQ, n: 'Psiquiatria', t: 2, l: '2 mês', p: 5 },
+      { g: A_DERMA, n: 'Dermatologia', t: 1, l: '2 mês', p: 0 },
+      { g: A_SAUDE, n: 'Saúde Coletiva', t: 2, l: '3 mês', p: 14 },
+    ];
+
+    return (
+      <div className="v2 scroll" style={{ height: '100%', background: 'var(--bg)' }}>
+        <div style={{ maxWidth: mobile ? '100%' : 1160, margin: '0 auto', padding: mobile ? '0 20px' : '0 56px' }}>
+
+          {/* Top */}
+          <div className="v2-top">
+            <Wordmark />
+            <div style={{ display: 'flex', alignItems: 'center', gap: mobile ? 12 : 22, fontSize: 13, color: 'var(--ink-muted)' }}>
+              <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)' }}>sex · 23:47</span>
+              {!mobile && <button className="v2-pill">prontuário</button>}
+              {!mobile && <button className="v2-pill">estante</button>}
+              <span style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid var(--border)', color: 'var(--ink-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontFamily: 'var(--font-display)', fontStyle: 'italic', fontWeight: 500 }}>M</span>
+            </div>
+          </div>
+
+          {/* Saudação contextual — compacta */}
+          <div style={{ padding: mobile ? '36px 0 24px' : '64px 0 36px', display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr auto', gap: mobile ? 24 : 48, alignItems: 'end' }}>
+            <div>
+              <div className="serif" style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--accent)', letterSpacing: '0.02em', marginBottom: 14 }}>
+                sexta · 23h47 · medicina, 4º ano
+              </div>
+              <h1 className="serif" style={{ fontSize: mobile ? 36 : 56, lineHeight: 1.02, fontWeight: 500, letterSpacing: '-0.025em', margin: 0, color: 'var(--ink)' }}>
+                Boa noite, Marina.<br/>
+                <span style={{ fontStyle: 'italic', color: 'var(--ink-muted)' }}>O que vai estudar agora?</span>
+              </h1>
+            </div>
+            {!mobile && (
+              <div style={{ textAlign: 'right', paddingBottom: 8 }}>
+                <div className="serif" style={{ fontSize: 11, fontStyle: 'italic', color: 'var(--ink-faint)', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  agenda
+                </div>
+                <div className="serif" style={{ fontSize: 28, fontWeight: 500, color: 'var(--alert)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                  47<span style={{ fontSize: 14, color: 'var(--ink-muted)', fontStyle: 'italic', marginLeft: 4 }}>h</span>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--ink-muted)', marginTop: 4 }}>até Cardio · segunda 8h</div>
+              </div>
+            )}
+          </div>
+
+          {/* Continuar — featured, hairline, não "card grande chamativo" */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: mobile ? '1fr' : '120px 1fr auto',
+            gap: mobile ? 16 : 28, alignItems: 'center',
+            padding: mobile ? '20px 0' : '24px 0',
+            borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
+          }}>
+            <div style={{ width: mobile ? 88 : 'auto' }}>
+              <Tome cat="cardio" title="Porto" edition="Semiologia · 8ª" last="ontem 21:18" glyph={A_CARDIO} />
+            </div>
+            <div>
+              <div className="serif" style={{ fontSize: 11, fontStyle: 'italic', color: 'var(--ink-faint)', letterSpacing: '0.05em', marginBottom: 6 }}>
+                continuar de onde parou
+              </div>
+              <div className="serif" style={{ fontSize: mobile ? 18 : 22, lineHeight: 1.3, fontWeight: 500, color: 'var(--ink)', letterSpacing: '-0.01em', marginBottom: 8, maxWidth: 540 }}>
+                <span style={{ color: 'var(--ink-faint)' }}>"</span>resume fisiopato de IC esquerda<span style={{ color: 'var(--ink-faint)' }}>"</span>
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', fontSize: 12, color: 'var(--ink-muted)' }}>
+                <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)' }}>Porto · pp. 437–441</span>
+                <span style={{ color: 'var(--ink-faint)' }}>·</span>
+                <span>3 das 5 questões respondidas</span>
+              </div>
+            </div>
+            {!mobile && (
+              <button style={{ padding: '12px 20px', background: 'var(--brand)', color: 'var(--bg)', fontSize: 14, borderRadius: 4, fontWeight: 500 }}>
+                retomar →
+              </button>
+            )}
+          </div>
+
+          {/* Ferramentas — 6 ações principais */}
+          <div style={{ padding: mobile ? '40px 0 28px' : '64px 0 40px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 22 }}>
+              <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, margin: 0, letterSpacing: '-0.015em' }}>
+                Ferramentas <span style={{ color: 'var(--ink-faint)', fontStyle: 'italic', fontSize: 16 }}>· o que pedir ao Hipócrates</span>
+              </h2>
+              {!mobile && <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)' }}>⌘K · paleta</span>}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)', gap: mobile ? 10 : 14 }}>
+              <Tool glyph={F_RESUMIR} label="Resumir" hint="capítulo, sistema, livro" hot />
+              <Tool glyph={F_EXPLICAR} label="Explicar" hint="mecanismo, conceito, ângulo de prova" />
+              <Tool glyph={F_QUIZ} label="Questionar" hint="5 questões estilo Revalida" />
+              <Tool glyph={F_CASO} label="Caso clínico" hint="HMA + exame + exames" />
+              <Tool glyph={F_DIFF} label="Diferenciar" hint="dois diagnósticos lado a lado" />
+              <Tool glyph={F_DOSE} label="Posologia" hint="dose, via, ajuste, bula" />
+            </div>
+          </div>
+
+          {/* Áreas de estudo */}
+          <div style={{ padding: mobile ? '8px 0 32px' : '12px 0 48px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 22 }}>
+              <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, margin: 0, letterSpacing: '-0.015em' }}>
+                Áreas <span style={{ color: 'var(--ink-faint)', fontStyle: 'italic', fontSize: 16 }}>· 16 disciplinas · medicina</span>
+              </h2>
+              {!mobile && (
+                <div style={{ display: 'flex', gap: 14, fontSize: 12.5, color: 'var(--ink-faint)' }}>
+                  <span style={{ color: 'var(--ink)' }}>todas</span>
+                  <span>ciclo básico</span>
+                  <span>ciclo clínico</span>
+                  <span>+ trocar curso</span>
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: mobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: mobile ? 10 : 14 }}>
+              {areas.map((a, i) => (
+                <Area key={i} glyph={a.g} name={a.n} tomes={a.t} last={a.l} active={a.active} prova={a.prova} progress={a.p} />
+              ))}
+            </div>
+          </div>
+
+          {/* Prontuário recente — lista densa, editorial */}
+          <div style={{ paddingBottom: 64, borderTop: '1px solid var(--border)', paddingTop: 36 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 18 }}>
+              <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, margin: 0, letterSpacing: '-0.015em' }}>
+                Prontuário recente
+              </h2>
+              {!mobile && <span style={{ fontSize: 12.5, color: 'var(--ink-faint)' }}>ver tudo →</span>}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {[
+                { t: '21:18', d: 'hoje', area: 'cardio', q: 'resume fisiopato de IC esquerda', src: 'Porto · pp. 437', kind: 'resumir' },
+                { t: '20:42', d: 'hoje', area: 'cardio', q: '5 questões sobre IC pra prova', src: 'Porto + Tratado SBC', kind: 'quizar' },
+                { t: '19:11', d: 'hoje', area: 'farma', q: 'dose furosemida IC descompensada', src: 'Goodman · pp. 712', kind: 'posologia' },
+                { t: '15:30', d: 'ontem', area: 'cardio', q: 'diferenciar IC esquerda × direita', src: 'Porto · pp. 442', kind: 'diferenciar' },
+                { t: '22:08', d: 'qua', area: 'pato', q: 'explica remodelamento ventricular', src: 'Robbins · pp. 528', kind: 'explicar' },
+              ].map((r, i) => (
+                <div key={i} style={{
+                  display: 'grid',
+                  gridTemplateColumns: mobile ? '54px 1fr' : '70px 80px 1fr 180px 24px',
+                  gap: 14, alignItems: 'center',
+                  padding: '14px 0',
+                  borderBottom: i < 4 ? '1px dotted var(--border)' : 'none',
+                  cursor: 'pointer',
+                }}>
+                  <div className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
+                    {r.t}<br/>
+                    <span style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 11 }}>{r.d}</span>
+                  </div>
+                  {!mobile && (
+                    <span className="serif" style={{ fontSize: 11, fontStyle: 'italic', color: 'var(--accent)' }}>
+                      /{r.kind}
+                    </span>
+                  )}
+                  <div className="serif" style={{ fontSize: mobile ? 14 : 16, color: 'var(--ink)', letterSpacing: '-0.005em' }}>
+                    <span style={{ color: 'var(--ink-faint)' }}>"</span>{r.q}<span style={{ color: 'var(--ink-faint)' }}>"</span>
+                  </div>
+                  {!mobile && (
+                    <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)', textAlign: 'right' }}>
+                      {r.src}
+                    </span>
+                  )}
+                  {!mobile && <span style={{ color: 'var(--ink-faint)', fontSize: 14 }}>→</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Composer flutuante minimalista */}
+          <div className="v2-composer" style={{ position: mobile ? 'sticky' : 'static', bottom: 0, background: 'var(--bg)', marginBottom: mobile ? 0 : 8 }}>
+            <span className="mono" style={{ color: 'var(--brand)', fontSize: 16 }}>—</span>
+            <span className="v2-composer-prompt">o que vai perguntar ao Hipócrates?</span>
+            {!mobile && (
+              <span className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)', padding: '3px 8px', border: '1px solid var(--border)', borderRadius: 4 }}>/ comandos</span>
+            )}
+          </div>
+
+          <div style={{ fontSize: 11, color: 'var(--ink-faint)', fontStyle: 'italic', textAlign: 'center', padding: '16px 0 32px', fontFamily: 'var(--font-display)' }}>
+            Material de estudo. Não substitui avaliação clínica presencial.
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  /* ============================================================
+     CANVAS
+     ============================================================ */
+  const D = { w: 1280, h: 820 };
+  const Mo = { w: 380, h: 800 };
+
+  function App() {
+    return (
+      <DesignCanvas>
+        <DCSection id="v2-atrio" title="Átrio · página inicial / centro do app"
+                   subtitle="Saudação contextual (sex 23:47, 47h até Cardio) + 'continuar de onde parou' + 6 ferramentas como ações principais + 16 áreas da medicina com indicador de atividade + prontuário recente. É o hub do app — tudo a 1 clique. Hairline, editorial, sem cards bombados.">
+          <DCArtboard id="atrio-d" label="Desktop" width={D.w} height={1620}><Atrio /></DCArtboard>
+          <DCArtboard id="atrio-m" label="Mobile" width={Mo.w} height={1640}><Atrio mobile /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="v2-intro" title="v2 · editorial, silencioso, sem cara de IA"
+                   subtitle="Marginália no lugar de chat-bubble. Tipografia respira. Personalização específica (sexta 23:47, 47h até prova, parou no cap. 12). Sem avatar, sem streaming cursor, sem pop-up de slash. O Hipócrates virou voz, não personagem.">
+          <DCArtboard id="land-d" label="Landing · Desktop" width={D.w} height={D.h}><Landing /></DCArtboard>
+          <DCArtboard id="land-m" label="Landing · Mobile" width={Mo.w} height={Mo.h}><Landing mobile /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="v2-consultorio" title="Consultório personalizado"
+                   subtitle="Saudação específica · contagem regressiva pra prova · 'continua de onde parou' como featured horizontal · tomos como livros tipográficos (não capas procedurais-AI).">
+          <DCArtboard id="cons-d" label="Desktop" width={D.w} height={D.h}><Consultorio /></DCArtboard>
+          <DCArtboard id="cons-m" label="Mobile" width={Mo.w} height={Mo.h}><Consultorio mobile /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="v2-anamnese" title="Anamnese — a tela mais importante"
+                   subtitle="Resposta como ENSAIO: capitular + prosa + marginália numerada à direita. Citação é nota de margem (¹ ² ³), não pílula. Composer sem caixa, sem botão. Pergunta da Marina aparece como epígrafe.">
+          <DCArtboard id="ana-d" label="Desktop · prosa + marginália" width={D.w} height={D.h}><Anamnese /></DCArtboard>
+          <DCArtboard id="ana-m" label="Mobile · prosa única coluna" width={Mo.w} height={Mo.h}><Anamnese mobile /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="v2-quizar" title="Questões — sem cards, lista editorial"
+                   subtitle="Numeração romana minúscula · gabarito como nota de rodapé · sem expand/colapse de modal · uma lista que respira. Cai na prova porque parece prova.">
+          <DCArtboard id="quiz-d" label="Desktop" width={D.w} height={D.h}><Quizar /></DCArtboard>
+          <DCArtboard id="quiz-m" label="Mobile" width={Mo.w} height={Mo.h}><Quizar mobile /></DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

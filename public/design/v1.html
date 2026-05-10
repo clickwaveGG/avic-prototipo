@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Avicena · Fundação + Telas-âncora</title>
+<link rel="stylesheet" href="tokens.css" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #f0eee9; }
+  body { font-family: "Inter", system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="av-components.jsx"></script>
+<script type="text/babel" src="av-foundation.jsx"></script>
+<script type="text/babel" src="av-screens.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+  // Mobile = 380×780, Desktop = 1280×800
+  const M = { w: 380, h: 780 };
+  const D = { w: 1280, h: 800 };
+
+  function App() {
+    return (
+      <DesignCanvas>
+        <DCSection id="00-foundation" title="00 · Fundação" subtitle="Tokens, tipografia e componentes-base. Tudo o que segue herda daqui.">
+          <DCArtboard id="tokens" label="Tokens · cor + tipo" width={900} height={620}>
+            <TokensArtboard />
+          </DCArtboard>
+          <DCArtboard id="components" label="Componentes · botões, citação, composer, bubbles, capas" width={900} height={820}>
+            <ComponentsArtboard />
+          </DCArtboard>
+          <DCArtboard id="slash" label="Slash palette · /comando" width={500} height={420}>
+            <div style={{ background: 'var(--bg)', height: '100%', padding: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="av">
+              <SlashPalette activeIndex={2} />
+            </div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="01-landing" title="01 · Landing" subtitle="Refazendo a v1 estática. Modo claro, hero respira, slash palette de teaser, três passos.">
+          <DCArtboard id="landing-d" label="Desktop · 1280" width={D.w} height={D.h}>
+            <Landing />
+          </DCArtboard>
+          <DCArtboard id="landing-m" label="Mobile · 380" width={M.w} height={M.h}>
+            <Landing mobile />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="02-onboarding" title="02 · Onboarding 3/3 · Disclaimer CFM" subtitle="Não é modal-popup. É parte do fluxo. Marina lê, marca, entra.">
+          <DCArtboard id="cfm-d" label="Desktop · 1280" width={D.w} height={D.h}>
+            <OnboardingCFM />
+          </DCArtboard>
+          <DCArtboard id="cfm-m" label="Mobile · 380" width={M.w} height={M.h}>
+            <OnboardingCFM mobile />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="03-consultorio" title="03 · Consultório populado" subtitle="Estante de códices com capa procedural por hash. Continua de onde parou + grid + cap counter no topo.">
+          <DCArtboard id="cons-d" label="Desktop · 1280" width={D.w} height={D.h}>
+            <ConsultorioPopulado />
+          </DCArtboard>
+          <DCArtboard id="cons-m" label="Mobile · 380" width={M.w} height={M.h}>
+            <ConsultorioPopulado mobile />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="04-chat" title="04 · Chat + Citação + PDF Viewer" subtitle="A tela mais importante. Split desktop, stacked mobile. Citação [pp. 438] dourada já clicada → highlight no PDF.">
+          <DCArtboard id="chat-d" label="Desktop · split 3 colunas" width={D.w} height={D.h}>
+            <ChatWithPDF />
+          </DCArtboard>
+          <DCArtboard id="chat-m" label="Mobile · chat em cima, PDF embaixo" width={M.w} height={M.h}>
+            <ChatWithPDF mobile />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="05-quizar" title="05 · Resposta /quizar" subtitle="5 cards estilo Revalida. Gabarito expandível. Comentário com porquê. Citação por questão.">
+          <DCArtboard id="quiz-d" label="Desktop" width={D.w} height={D.h}>
+            <RespostaQuizar />
+          </DCArtboard>
+          <DCArtboard id="quiz-m" label="Mobile" width={M.w} height={M.h}>
+            <RespostaQuizar mobile />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="06-pagamento" title="06 · Sucesso pagamento" subtitle="Sem confetti. Check stroke-draw + aurora verde respirando 1×. Peso clínico, não festa de banco.">
+          <DCArtboard id="pay-d" label="Desktop" width={D.w} height={D.h}>
+            <SucessoPagamento />
+          </DCArtboard>
+          <DCArtboard id="pay-m" label="Mobile" width={M.w} height={M.h}>
+            <SucessoPagamento mobile />
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
