@@ -1,15 +1,15 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Landing } from "@/components/landing";
-import { Dashboard } from "@/components/dashboard";
+import { Workspace } from "@/components/workspace";
 
-export default async function Home() {
+export default async function AnamnesePage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return <Landing />;
+    redirect("/");
   }
 
   const { data: profile } = await supabase
@@ -18,5 +18,5 @@ export default async function Home() {
     .eq("id", user.id)
     .single();
 
-  return <Dashboard email={user.email ?? ""} profile={profile} />;
+  return <Workspace email={user.email ?? ""} profile={profile} />;
 }
