@@ -1411,3 +1411,177 @@ a { color: var(--primary); }
   margin-right: auto;
   padding: 0 24px;
 }
+
+/* ============================================================================
+   AVICENA PRIMITIVES — design system v2 (claude desing pkg)
+   Adicionado 2026-05-10. Classes prefixadas com .av- pra não colidir com legado.
+   ============================================================================ */
+
+:root {
+  --av-brand: #1E4D3F;
+  --av-brand-soft: #3FA68C;
+  --av-brand-glow: #76EBC4;
+  --av-accent: #D4AB37;
+  --av-accent-bg: #FBF3D9;
+  --av-shadow-sm: 0 1px 2px rgba(15, 26, 23, 0.06);
+  --av-shadow-md: 0 4px 12px rgba(15, 26, 23, 0.08);
+  --av-shadow-lg: 0 12px 32px rgba(15, 26, 23, 0.12);
+}
+
+/* Citation pill — [pp. 437] clicável */
+.av-cite {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--av-accent-bg);
+  border: 1px solid var(--av-accent);
+  color: #6F5417;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.2;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+  cursor: pointer;
+}
+.av-cite:hover { transform: scale(1.05); box-shadow: var(--av-shadow-sm); }
+.av-cite:active { transform: scale(0.95); }
+.av-cite[data-active="true"] {
+  background: var(--av-accent);
+  color: #3A2A0A;
+}
+
+/* HipAvatar wrapper */
+.av-hip-avatar {
+  border-radius: 50%;
+  background: var(--av-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Glow pulse — Hipócrates pensando */
+.av-glow {
+  box-shadow: 0 0 0 0 rgba(118, 235, 196, 0.6);
+  animation: av-pulse 1.8s ease-in-out infinite;
+}
+@keyframes av-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(118, 235, 196, 0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(118, 235, 196, 0); }
+}
+
+/* Streaming cursor — barra piscando ao final do parecer */
+.av-cursor::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--av-brand-soft);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: av-blink 800ms steps(2, start) infinite;
+}
+@keyframes av-blink { to { opacity: 0; } }
+
+/* Aurora — gradient ambient ao fundo (consultório vazio, hero) */
+.av-aurora {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 20% 30%, rgba(63, 166, 140, 0.10), transparent 60%),
+    radial-gradient(50% 40% at 80% 70%, rgba(118, 235, 196, 0.10), transparent 60%),
+    radial-gradient(40% 30% at 50% 50%, rgba(212, 171, 55, 0.06), transparent 60%);
+  animation: av-aurora 18s ease-in-out infinite;
+}
+@keyframes av-aurora {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-4%, 3%, 0) scale(1.08); }
+}
+
+/* Codex cover procedural — aspect-ratio livro + lombada + sheen */
+.av-codex-cover {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 6px 10px 10px 6px;
+  overflow: hidden;
+  box-shadow: var(--av-shadow-md), inset 0 0 0 1px rgba(255,255,255,0.06);
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+}
+.av-codex-cover::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 10px;
+  background: linear-gradient(90deg, rgba(0,0,0,0.32), rgba(0,0,0,0.02));
+  z-index: 2;
+}
+.av-codex-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%);
+  z-index: 2;
+}
+.av-codex-card:hover .av-codex-cover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--av-shadow-lg);
+}
+
+/* Selo "Cátedra" sobreposto (Códice oficial do Mestre) */
+.av-codex-seal {
+  position: absolute;
+  top: 12px;
+  left: 18px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(212, 171, 55, 0.95);
+  color: #3A2A0A;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  z-index: 4;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.18);
+}
+
+/* Skeleton com pulso brand-glow (não cinza genérico) */
+.av-skeleton {
+  background: linear-gradient(90deg, rgba(15, 26, 23, 0.06) 0%, rgba(118, 235, 196, 0.12) 50%, rgba(15, 26, 23, 0.06) 100%);
+  background-size: 200% 100%;
+  animation: av-shimmer 1.6s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes av-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Token-by-token streaming — cada token entra com fade + translate */
+.av-token {
+  display: inline;
+  opacity: 0;
+  animation: av-token-in 200ms ease-out forwards;
+}
+@keyframes av-token-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Page-turning check — sucesso pagamento (sem confetti) */
+.av-check {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: av-draw 600ms cubic-bezier(.6,0,.4,1) 200ms forwards;
+}
+@keyframes av-draw { to { stroke-dashoffset: 0; } }
+
+/* Reduce motion — pausa todas as animações ambientais */
+@media (prefers-reduced-motion: reduce) {
+  .av-glow, .av-aurora, .av-cursor::after, .av-skeleton, .av-token, .av-check {
+    animation: none !important;
+  }
+}
