@@ -1857,7 +1857,31 @@ a { color: var(--primary); }
 }
 @media (max-width: 768px) {
   .av .av-dash-sidebar {
-    display: none !important;
+    position: fixed !important;
+    z-index: 30;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    transform: translateX(-100%);
+    transition: transform 220ms cubic-bezier(.2, .8, .2, 1);
+    box-shadow: var(--av-shadow-lg);
+  }
+  .av .av-dash-sidebar.is-open {
+    transform: translateX(0);
+  }
+  .av .av-dash-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 31, 26, 0.40);
+    backdrop-filter: blur(2px);
+    z-index: 29;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease-out;
+  }
+  .av .av-dash-backdrop.is-open {
+    opacity: 1;
+    pointer-events: auto;
   }
   .av .av-dash-cathedra { grid-template-columns: 1fr; }
   .av .av-dash-codices { grid-template-columns: repeat(3, 1fr); }
@@ -1870,4 +1894,134 @@ a { color: var(--primary); }
   .av .av-dash-stats { grid-template-columns: 1fr; }
   .av .av-dash-tools { grid-template-columns: 1fr; }
   .av .av-dash-codices { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ============================================================================
+   Dashboard — hover states CSS-only (performance)
+   Substitui onMouseEnter/onMouseLeave JS por hover declarativo (GPU-accelerated).
+   ============================================================================ */
+
+.av .av-card {
+  background: var(--bg-elev-1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+  will-change: transform;
+}
+.av .av-card.is-interactive { cursor: pointer; }
+.av .av-card.is-interactive:hover {
+  border-color: var(--brand-soft);
+  transform: translateY(-2px);
+  box-shadow: var(--av-shadow-md);
+}
+.av .av-card.is-accent {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+.av .av-card.is-disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.av .av-card.is-disabled:hover {
+  transform: none;
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+/* Nav items */
+.av .av-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  font-size: 13.5px;
+  color: var(--ink-muted);
+  background: transparent;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+  transition: background 100ms ease, color 100ms ease;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+.av .av-nav-item:hover {
+  background: var(--bg-elev-2);
+  color: var(--ink);
+}
+.av .av-nav-item.is-active {
+  color: var(--ink);
+  background: var(--bg-elev-2);
+  border-left-color: var(--brand-glow);
+  font-weight: 600;
+}
+.av .av-nav-item.is-disabled {
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+.av .av-nav-item.is-disabled:hover {
+  background: transparent;
+  color: var(--ink-faint);
+}
+
+/* Stat cards — radial glow accent variant */
+.av .av-stat-card {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--bg-elev-1);
+  border: 1px solid var(--border);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+  will-change: transform;
+}
+.av .av-stat-card.is-accent {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+.av .av-stat-card.is-accent::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 171, 55, 0.20), transparent 70%);
+  pointer-events: none;
+}
+.av .av-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--av-shadow-md);
+}
+
+/* Hamburger trigger + mobile close */
+.av .av-mobile-trigger { display: none; }
+.av .av-mobile-close { display: none !important; }
+@media (max-width: 768px) {
+  .av .av-mobile-trigger {
+    display: inline-flex;
+    padding: 6px;
+    border-radius: 8px;
+    color: var(--ink-muted);
+    background: var(--bg-elev-2);
+    border: none;
+    cursor: pointer;
+  }
+  .av .av-mobile-trigger:hover {
+    background: var(--border);
+  }
+  .av .av-mobile-close {
+    display: inline-flex !important;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+  }
+}
+
+/* Aurora — fica fixo em vez de absolute pra não causar reflow no scroll */
+.av .av-aurora.is-static {
+  position: fixed;
+  z-index: 1;
 }

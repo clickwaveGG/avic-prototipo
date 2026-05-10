@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -8,6 +9,7 @@ import {
   ClipboardCheck,
   Flame,
   GraduationCap,
+  Menu,
   MessageSquare,
   Search,
   Stethoscope,
@@ -18,6 +20,7 @@ import {
   Award,
   Bell,
   ChevronRight,
+  X,
 } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
 import { AvicenaMark, CodexCover } from "@/components/avicena";
@@ -35,12 +38,22 @@ function getGreeting() {
   return "boa noite";
 }
 
-const NAV_ITEMS = [
+type NavItem = {
+  id: string;
+  label: string;
+  icon: typeof Stethoscope;
+  href: string;
+  active?: boolean;
+  badge?: number;
+  soon?: boolean;
+};
+
+const NAV_ITEMS: NavItem[] = [
   { id: "home", label: "Consultório", icon: Stethoscope, href: "/", active: true },
-  { id: "anamnese", label: "Anamneses", icon: MessageSquare, href: "/anamnese", badge: null },
-  { id: "codices", label: "Códices", icon: BookOpenText, href: "#", disabled: false },
-  { id: "roteiro", label: "Roteiro", icon: Calendar, href: "#", soon: true },
+  { id: "anamnese", label: "Anamneses", icon: MessageSquare, href: "/anamnese" },
+  { id: "codices", label: "Códices", icon: BookOpenText, href: "/anamnese" },
   { id: "sabatinas", label: "Sabatinas", icon: ClipboardCheck, href: "#", badge: 2 },
+  { id: "roteiro", label: "Roteiro", icon: Calendar, href: "#", soon: true },
   { id: "revisao", label: "Revisão", icon: Repeat2, href: "#", soon: true },
   { id: "casos", label: "Casos", icon: UserSearch, href: "#", soon: true },
   { id: "turma", label: "Turma", icon: Users, href: "#", soon: true },
@@ -84,6 +97,7 @@ const TOOLS = [
     icon: MessageSquare,
     href: "/anamnese",
     status: "ATIVO",
+    state: "active" as const,
   },
   {
     id: "codices",
@@ -92,6 +106,7 @@ const TOOLS = [
     icon: BookOpenText,
     href: "/anamnese",
     status: "ATIVO",
+    state: "active" as const,
   },
   {
     id: "sabatinas",
@@ -100,7 +115,7 @@ const TOOLS = [
     icon: ClipboardCheck,
     href: "#",
     status: "1 PENDENTE",
-    urgent: true,
+    state: "urgent" as const,
   },
   {
     id: "roteiro",
@@ -109,6 +124,7 @@ const TOOLS = [
     icon: Calendar,
     href: "#",
     status: "EM BREVE",
+    state: "soon" as const,
   },
   {
     id: "revisao",
@@ -117,6 +133,7 @@ const TOOLS = [
     icon: Repeat2,
     href: "#",
     status: "EM BREVE",
+    state: "soon" as const,
   },
   {
     id: "casos",
@@ -125,6 +142,7 @@ const TOOLS = [
     icon: UserSearch,
     href: "#",
     status: "EM BREVE",
+    state: "soon" as const,
   },
   {
     id: "turma",
@@ -133,6 +151,7 @@ const TOOLS = [
     icon: Users,
     href: "#",
     status: "EM BREVE",
+    state: "soon" as const,
   },
   {
     id: "carreira",
@@ -141,6 +160,7 @@ const TOOLS = [
     icon: Award,
     href: "#",
     status: "EM BREVE",
+    state: "soon" as const,
   },
 ];
 
@@ -166,6 +186,8 @@ export function Dashboard({
   email: string;
   profile: Profile | null;
 }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const displayName =
     profile?.display_name?.trim() || email?.split("@")[0] || "estudante";
   const tier = profile?.tier ?? "estagiario";
@@ -173,8 +195,16 @@ export function Dashboard({
 
   return (
     <div className="av" style={{ minHeight: "100vh", display: "flex" }}>
-      {/* Sidebar global */}
+      {/* Mobile backdrop */}
+      <div
+        className={`av-dash-backdrop ${sidebarOpen ? "is-open" : ""}`}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Sidebar */}
       <aside
+        className={`av-dash-sidebar ${sidebarOpen ? "is-open" : ""}`}
         style={{
           width: 260,
           flexShrink: 0,
@@ -182,60 +212,69 @@ export function Dashboard({
           background: "var(--bg-elev-1)",
           display: "flex",
           flexDirection: "column",
-          position: "sticky",
-          top: 0,
-          height: "100vh",
         }}
-        className="av-dash-sidebar"
       >
         {/* Brand + Academy */}
         <div
           style={{
             padding: "18px 18px 14px",
             borderBottom: "1px solid var(--border)",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 10,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <AvicenaMark size={26} />
-            <span className="serif" style={{ fontSize: 18, fontWeight: 600 }}>
-              Avicena
-            </span>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <AvicenaMark size={26} />
+              <span className="serif" style={{ fontSize: 18, fontWeight: 600 }}>
+                Avicena
+              </span>
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: "var(--ink-faint)",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                fontWeight: 600,
+              }}
+            >
+              UNIFAC · Medicina · M3
+            </div>
           </div>
-          <div style={{ fontSize: 11, color: "var(--ink-faint)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>
-            UNIFAC · Medicina · M3
-          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            style={{
+              padding: 4,
+              color: "var(--ink-faint)",
+              display: "none",
+            }}
+            className="av-mobile-close"
+            aria-label="Fechar menu"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Nav */}
         <nav style={{ flex: 1, overflowY: "auto", padding: "12px 8px 8px" }} className="av-scroll">
           {NAV_ITEMS.map((item) => {
             const I = item.icon;
-            const isDisabled = item.soon;
+            const classes = [
+              "av-nav-item",
+              item.active ? "is-active" : "",
+              item.soon ? "is-disabled" : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+
             const inner = (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "9px 12px",
-                  borderRadius: 8,
-                  marginBottom: 2,
-                  fontSize: 13.5,
-                  color: item.active
-                    ? "var(--ink)"
-                    : isDisabled
-                    ? "var(--ink-faint)"
-                    : "var(--ink-muted)",
-                  background: item.active ? "var(--bg-elev-2)" : "transparent",
-                  borderLeft: item.active ? "3px solid var(--brand-glow)" : "3px solid transparent",
-                  cursor: isDisabled ? "not-allowed" : "pointer",
-                  fontWeight: item.active ? 600 : 500,
-                  transition: "background 120ms",
-                }}
-              >
+              <>
                 <I size={16} style={{ flexShrink: 0 }} />
                 <span style={{ flex: 1 }}>{item.label}</span>
-                {item.badge && (
+                {item.badge ? (
                   <span
                     style={{
                       fontSize: 10,
@@ -249,8 +288,8 @@ export function Dashboard({
                   >
                     {item.badge}
                   </span>
-                )}
-                {item.soon && (
+                ) : null}
+                {item.soon ? (
                   <span
                     className="mono"
                     style={{
@@ -264,19 +303,19 @@ export function Dashboard({
                   >
                     em breve
                   </span>
-                )}
-              </div>
+                ) : null}
+              </>
             );
 
-            if (isDisabled) {
+            if (item.soon) {
               return (
-                <div key={item.id} aria-disabled>
+                <div key={item.id} className={classes} aria-disabled="true">
                   {inner}
                 </div>
               );
             }
             return (
-              <Link key={item.id} href={item.href} style={{ textDecoration: "none" }}>
+              <Link key={item.id} href={item.href} className={classes}>
                 {inner}
               </Link>
             );
@@ -304,8 +343,6 @@ export function Dashboard({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 13,
-              fontWeight: 700,
               flexShrink: 0,
             }}
           >
@@ -316,7 +353,6 @@ export function Dashboard({
               style={{
                 fontSize: 12.5,
                 fontWeight: 600,
-                color: "var(--ink)",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -358,7 +394,15 @@ export function Dashboard({
             {initial}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
               {displayName}
             </div>
             <div className="mono" style={{ fontSize: 10.5, color: "var(--ink-faint)" }}>
@@ -384,24 +428,37 @@ export function Dashboard({
 
       {/* Main */}
       <main style={{ flex: 1, minWidth: 0, background: "var(--bg)", position: "relative" }}>
-        <div className="av-aurora" />
+        {/* Aurora fixa — não causa reflow no scroll */}
+        <div className="av-aurora is-static" />
 
         {/* Top bar */}
         <header
           style={{
-            position: "relative",
-            zIndex: 2,
-            padding: "16px 32px",
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+            padding: "14px 24px",
             borderBottom: "1px solid var(--border)",
-            background: "var(--bg-elev-1)",
+            background: "rgba(255, 255, 255, 0.85)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
             display: "flex",
             alignItems: "center",
-            gap: 16,
+            gap: 12,
           }}
         >
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="av-mobile-trigger"
+            aria-label="Abrir menu"
+          >
+            <Menu size={18} />
+          </button>
+
           <div className="serif" style={{ fontSize: 17, fontWeight: 600 }}>
             Consultório
           </div>
+
           <div
             className="av-hide-mobile"
             style={{
@@ -415,7 +472,7 @@ export function Dashboard({
               background: "var(--bg-elev-2)",
               fontSize: 13,
               color: "var(--ink-muted)",
-              marginLeft: 16,
+              marginLeft: 8,
             }}
           >
             <Search size={14} />
@@ -435,12 +492,7 @@ export function Dashboard({
           </div>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>
             <button
-              style={{
-                position: "relative",
-                padding: 6,
-                color: "var(--ink-muted)",
-              }}
-              title="Notificações"
+              style={{ position: "relative", padding: 6, color: "var(--ink-muted)" }}
               aria-label="Notificações"
             >
               <Bell size={18} />
@@ -453,7 +505,7 @@ export function Dashboard({
                   height: 7,
                   borderRadius: "50%",
                   background: "var(--alert)",
-                  border: "2px solid var(--bg-elev-1)",
+                  border: "2px solid rgba(255, 255, 255, 0.85)",
                 }}
               />
             </button>
@@ -467,7 +519,7 @@ export function Dashboard({
           style={{
             position: "relative",
             zIndex: 2,
-            padding: "36px 32px 64px",
+            padding: "32px 24px 64px",
             maxWidth: 1200,
             margin: "0 auto",
           }}
@@ -480,7 +532,7 @@ export function Dashboard({
             <h1
               className="serif"
               style={{
-                fontSize: "clamp(28px, 4vw, 40px)",
+                fontSize: "clamp(26px, 4vw, 38px)",
                 fontWeight: 600,
                 letterSpacing: "-0.015em",
                 lineHeight: 1.12,
@@ -492,7 +544,7 @@ export function Dashboard({
               {" "}já tá te colocando no topo.
             </h1>
             <p style={{ fontSize: 15, color: "var(--ink-muted)", lineHeight: 1.55 }}>
-              Continua de onde parou no Porto, encara a Sabatina da Profª Camila, ou bora um códice novo.
+              Continua de onde parou no Porto, encara a Sabatina, ou bora um códice novo.
             </p>
           </div>
 
@@ -503,29 +555,8 @@ export function Dashboard({
               return (
                 <div
                   key={s.label}
-                  style={{
-                    background: s.accent ? "var(--accent-bg)" : "var(--bg-elev-1)",
-                    border: `1px solid ${s.accent ? "var(--accent)" : "var(--border)"}`,
-                    borderRadius: 14,
-                    padding: 18,
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
+                  className={`av-stat-card ${s.accent ? "is-accent" : ""}`}
                 >
-                  {s.accent && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: -20,
-                        right: -20,
-                        width: 100,
-                        height: 100,
-                        borderRadius: "50%",
-                        background: "radial-gradient(circle, rgba(212,171,55,0.20), transparent 70%)",
-                        pointerEvents: "none",
-                      }}
-                    />
-                  )}
                   <div
                     style={{
                       display: "flex",
@@ -537,6 +568,7 @@ export function Dashboard({
                       letterSpacing: "0.08em",
                       color: s.accent ? "#6F5417" : "var(--ink-muted)",
                       marginBottom: 12,
+                      position: "relative",
                     }}
                   >
                     <I size={13} />
@@ -551,10 +583,11 @@ export function Dashboard({
                       color: s.accent ? "#6F5417" : "var(--ink)",
                       marginBottom: 6,
                       letterSpacing: "-0.02em",
+                      position: "relative",
                     }}
                   >
                     {s.value}
-                    {s.delta && (
+                    {s.delta ? (
                       <span
                         style={{
                           fontSize: 12,
@@ -566,13 +599,14 @@ export function Dashboard({
                       >
                         {s.delta}
                       </span>
-                    )}
+                    ) : null}
                   </div>
                   <div
                     style={{
                       fontSize: 12.5,
                       color: s.accent ? "#7A6027" : "var(--ink-muted)",
                       lineHeight: 1.45,
+                      position: "relative",
                     }}
                   >
                     {s.sub}
@@ -583,34 +617,9 @@ export function Dashboard({
           </div>
 
           {/* Hoje na Cátedra */}
-          <div style={{ marginTop: 36, marginBottom: 12, display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.10em",
-                textTransform: "uppercase",
-                color: "var(--ink-muted)",
-              }}
-            >
-              Hoje na tua Cátedra
-            </div>
-            <button style={{ fontSize: 12, color: "var(--ink-faint)" }}>
-              ver tudo →
-            </button>
-          </div>
+          <SectionTitle title="Hoje na tua Cátedra" right="ver tudo →" />
           <div className="av-dash-cathedra">
-            <div
-              style={{
-                background: "var(--bg-elev-1)",
-                border: "1px solid var(--accent)",
-                borderRadius: 14,
-                padding: 16,
-                display: "flex",
-                gap: 12,
-                position: "relative",
-              }}
-            >
+            <div className="av-card is-accent" style={{ padding: 16, display: "flex", gap: 12 }}>
               <div
                 style={{
                   width: 40,
@@ -647,21 +656,11 @@ export function Dashboard({
                 </div>
               </div>
               <button className="av-btn-soft" style={{ flexShrink: 0, alignSelf: "center" }}>
-                iniciar
-                <ArrowRight size={14} />
+                iniciar <ArrowRight size={14} />
               </button>
             </div>
 
-            <div
-              style={{
-                background: "var(--bg-elev-1)",
-                border: "1px solid var(--border)",
-                borderRadius: 14,
-                padding: 16,
-                display: "flex",
-                gap: 12,
-              }}
-            >
+            <div className="av-card" style={{ padding: 16, display: "flex", gap: 12 }}>
               <div
                 style={{
                   width: 40,
@@ -691,55 +690,16 @@ export function Dashboard({
                   Mensagem · Profª Camila
                 </div>
                 <div style={{ fontSize: 13.5, color: "var(--ink)", lineHeight: 1.5 }}>
-                  "Bora revisar apoptose hoje — 70% da turma furou no quiz da semana passada."
+                  &ldquo;Bora revisar apoptose hoje — 70% da turma furou no quiz da semana passada.&rdquo;
                 </div>
               </div>
             </div>
           </div>
 
           {/* Continua de onde parou */}
-          <div
-            style={{
-              marginTop: 36,
-              marginBottom: 12,
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: "0.10em",
-              textTransform: "uppercase",
-              color: "var(--ink-muted)",
-            }}
-          >
-            Continua de onde parou
-          </div>
-          <Link
-            href="/anamnese"
-            style={{
-              textDecoration: "none",
-              color: "inherit",
-              display: "block",
-            }}
-          >
-            <div
-              style={{
-                background: "var(--bg-elev-1)",
-                border: "1px solid var(--border)",
-                borderRadius: 14,
-                padding: 18,
-                display: "flex",
-                gap: 16,
-                alignItems: "center",
-                cursor: "pointer",
-                transition: "border-color 160ms, box-shadow 160ms",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--brand-soft)";
-                e.currentTarget.style.boxShadow = "var(--av-shadow-md)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--border)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
+          <SectionTitle title="Continua de onde parou" />
+          <Link href="/anamnese" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+            <div className="av-card is-interactive" style={{ padding: 18, display: "flex", gap: 16, alignItems: "center" }}>
               <CodexCover title="Porto Semiologia" category="Cardio" size="sm" cathedra />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
@@ -764,7 +724,7 @@ export function Dashboard({
                     fontStyle: "italic",
                   }}
                 >
-                  "resume fisiopato de IC esquerda e me dá 5 questões pra prova segunda"
+                  &ldquo;resume fisiopato de IC esquerda e me dá 5 questões pra prova segunda&rdquo;
                 </div>
               </div>
               <div style={{ color: "var(--brand)", flexShrink: 0 }}>
@@ -774,64 +734,31 @@ export function Dashboard({
           </Link>
 
           {/* Tools grid */}
-          <div
-            style={{
-              marginTop: 36,
-              marginBottom: 14,
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.10em",
-                textTransform: "uppercase",
-                color: "var(--ink-muted)",
-              }}
-            >
-              Ferramentas da formação
-            </div>
-            <div style={{ fontSize: 11.5, color: "var(--ink-faint)" }}>
-              <span style={{ color: "var(--brand-soft)", fontWeight: 600 }}>3 ativas</span> · 5 em breve
-            </div>
-          </div>
+          <SectionTitle
+            title="Ferramentas da formação"
+            right={
+              <>
+                <span style={{ color: "var(--brand-soft)", fontWeight: 600 }}>3 ativas</span>
+                {" · 5 em breve"}
+              </>
+            }
+          />
           <div className="av-dash-tools">
             {TOOLS.map((t) => {
               const I = t.icon;
-              const isActive = t.status === "ATIVO";
-              const isPending = t.urgent;
-              const isSoon = t.status === "EM BREVE";
+              const isSoon = t.state === "soon";
+              const isUrgent = t.state === "urgent";
+
+              const cardClass = [
+                "av-card",
+                isSoon ? "is-disabled" : "is-interactive",
+                isUrgent ? "is-accent" : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
+
               const inner = (
-                <div
-                  style={{
-                    background: "var(--bg-elev-1)",
-                    border: `1px solid ${
-                      isPending ? "var(--accent)" : isSoon ? "var(--border)" : "var(--border)"
-                    }`,
-                    borderRadius: 14,
-                    padding: 18,
-                    height: "100%",
-                    transition: "all 160ms",
-                    cursor: isSoon ? "not-allowed" : "pointer",
-                    opacity: isSoon ? 0.65 : 1,
-                    position: "relative",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (isSoon) return;
-                    e.currentTarget.style.borderColor = "var(--brand-soft)";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "var(--av-shadow-md)";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (isSoon) return;
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.transform = "none";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                >
+                <div className={cardClass} style={{ padding: 18, height: "100%" }}>
                   <div
                     style={{
                       display: "flex",
@@ -845,8 +772,8 @@ export function Dashboard({
                         width: 36,
                         height: 36,
                         borderRadius: 10,
-                        background: isPending ? "var(--accent-bg)" : "var(--brand-soft-bg)",
-                        color: isPending ? "#6F5417" : "var(--brand)",
+                        background: isUrgent ? "var(--accent-bg)" : "var(--brand-soft-bg)",
+                        color: isUrgent ? "#6F5417" : "var(--brand)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -862,16 +789,18 @@ export function Dashboard({
                         letterSpacing: "0.08em",
                         padding: "3px 8px",
                         borderRadius: 6,
-                        background: isActive
-                          ? "var(--brand-soft-bg)"
-                          : isPending
-                          ? "var(--accent-bg)"
-                          : "var(--bg-elev-2)",
-                        color: isActive
-                          ? "var(--brand)"
-                          : isPending
-                          ? "#6F5417"
-                          : "var(--ink-faint)",
+                        background:
+                          t.state === "active"
+                            ? "var(--brand-soft-bg)"
+                            : isUrgent
+                            ? "var(--accent-bg)"
+                            : "var(--bg-elev-2)",
+                        color:
+                          t.state === "active"
+                            ? "var(--brand)"
+                            : isUrgent
+                            ? "#6F5417"
+                            : "var(--ink-faint)",
                       }}
                     >
                       {t.status}
@@ -887,14 +816,10 @@ export function Dashboard({
               );
 
               if (isSoon || t.href === "#") {
-                return (
-                  <div key={t.id} aria-disabled={isSoon}>
-                    {inner}
-                  </div>
-                );
+                return <div key={t.id}>{inner}</div>;
               }
               return (
-                <Link key={t.id} href={t.href} style={{ textDecoration: "none" }}>
+                <Link key={t.id} href={t.href} style={{ textDecoration: "none", color: "inherit" }}>
                   {inner}
                 </Link>
               );
@@ -902,30 +827,14 @@ export function Dashboard({
           </div>
 
           {/* Tua estante */}
-          <div
-            style={{
-              marginTop: 36,
-              marginBottom: 14,
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.10em",
-                textTransform: "uppercase",
-                color: "var(--ink-muted)",
-              }}
-            >
-              Tua estante · {RECENT_CODICES.length} códices
-            </div>
-            <div style={{ fontSize: 11.5, color: "var(--ink-faint)" }}>
-              <span style={{ color: "var(--accent)" }}>2</span> da Cátedra · 3 pessoais
-            </div>
-          </div>
+          <SectionTitle
+            title={`Tua estante · ${RECENT_CODICES.length} códices`}
+            right={
+              <>
+                <span style={{ color: "var(--accent)" }}>2</span> da Cátedra · 3 pessoais
+              </>
+            }
+          />
           <div className="av-dash-codices">
             {RECENT_CODICES.map((c) => (
               <div key={c.title} className="av-codex-card">
@@ -966,41 +875,15 @@ export function Dashboard({
           </div>
 
           {/* Comparativo turma */}
-          <div
-            style={{
-              marginTop: 36,
-              marginBottom: 14,
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.10em",
-                textTransform: "uppercase",
-                color: "var(--ink-muted)",
-              }}
-            >
-              Posição na turma · últimos 30 dias
-            </div>
-            <div style={{ fontSize: 11.5, color: "var(--ink-faint)" }}>
-              80 estagiários na M3-2026.1
-            </div>
-          </div>
-          <div
-            style={{
-              background: "var(--bg-elev-1)",
-              border: "1px solid var(--border)",
-              borderRadius: 14,
-              padding: 22,
-            }}
-          >
+          <SectionTitle
+            title="Posição na turma · últimos 30 dias"
+            right="80 estagiários na M3-2026.1"
+          />
+          <div className="av-card" style={{ padding: 22 }}>
             {TURMA_RANKING.map((r, i) => {
               const pct = Math.min(100, (r.you / r.top) * 100);
               const isLeader = r.position === "1º";
+              const isLast = i === TURMA_RANKING.length - 1;
               return (
                 <div
                   key={r.matter}
@@ -1009,19 +892,14 @@ export function Dashboard({
                     gridTemplateColumns: "120px 1fr 80px",
                     gap: 16,
                     alignItems: "center",
-                    paddingBottom: i === TURMA_RANKING.length - 1 ? 0 : 14,
-                    marginBottom: i === TURMA_RANKING.length - 1 ? 0 : 14,
-                    borderBottom:
-                      i === TURMA_RANKING.length - 1
-                        ? "none"
-                        : "1px solid var(--bg-elev-2)",
+                    paddingBottom: isLast ? 0 : 14,
+                    marginBottom: isLast ? 0 : 14,
+                    borderBottom: isLast ? "none" : "1px solid var(--bg-elev-2)",
                   }}
                   className="av-rank-row"
                 >
                   <div>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink)" }}>
-                      {r.matter}
-                    </div>
+                    <div style={{ fontSize: 13.5, fontWeight: 600 }}>{r.matter}</div>
                     <div className="mono" style={{ fontSize: 11, color: "var(--ink-faint)" }}>
                       {r.you} anamneses
                     </div>
@@ -1057,15 +935,9 @@ export function Dashboard({
                         background: "var(--ink-muted)",
                         opacity: 0.4,
                       }}
-                      title={`Média turma: ${r.average}`}
+                      aria-hidden="true"
                     />
-                    <div
-                      style={{
-                        marginTop: 4,
-                        fontSize: 10.5,
-                        color: "var(--ink-faint)",
-                      }}
-                    >
+                    <div style={{ marginTop: 4, fontSize: 10.5, color: "var(--ink-faint)" }}>
                       média da turma: {r.average}
                     </div>
                   </div>
@@ -1086,7 +958,6 @@ export function Dashboard({
             })}
           </div>
 
-          {/* Footer disclaimer */}
           <div
             style={{
               marginTop: 48,
@@ -1104,6 +975,41 @@ export function Dashboard({
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function SectionTitle({
+  title,
+  right,
+}: {
+  title: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        marginTop: 36,
+        marginBottom: 14,
+        display: "flex",
+        alignItems: "baseline",
+        justifyContent: "space-between",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: "0.10em",
+          textTransform: "uppercase",
+          color: "var(--ink-muted)",
+        }}
+      >
+        {title}
+      </div>
+      {right ? (
+        <div style={{ fontSize: 11.5, color: "var(--ink-faint)" }}>{right}</div>
+      ) : null}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 type Size = "sm" | "md" | "lg";
 
 type Props = {
@@ -143,7 +145,7 @@ function hashStr(s: string) {
   return Math.abs(h);
 }
 
-export function CodexCover({
+function CodexCoverImpl({
   title,
   category,
   author,
@@ -242,3 +244,5 @@ export function CodexCover({
     </div>
   );
 }
+
+export const CodexCover = memo(CodexCoverImpl);
