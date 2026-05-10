@@ -209,11 +209,10 @@ export function Dashboard({
     profile?.display_name?.trim() || email?.split("@")[0] || "estudante";
   const tier = profile?.tier ?? "estagiario";
   const initial = displayName.slice(0, 1).toUpperCase();
-  const academy = profile?.academy?.trim() || "Academia";
-  const courseLabel =
-    COURSE_LABELS[profile?.course ?? ""] ?? "Curso";
+  const courseLabel = COURSE_LABELS[profile?.course ?? ""] ?? "";
   const cohort = profile?.cohort?.trim() || "";
-  const academyLine = [academy, courseLabel, cohort]
+  const period = profile?.period?.trim() || "";
+  const contextLine = [courseLabel, period, cohort]
     .filter(Boolean)
     .join(" · ");
 
@@ -265,7 +264,7 @@ export function Dashboard({
                 fontWeight: 600,
               }}
             >
-              {academyLine}
+              {contextLine || "Tua formação"}
             </div>
           </div>
           <button

@@ -14,7 +14,6 @@ import {
   Sprout,
   Dna,
   BookOpenText,
-  Building2,
   CalendarRange,
   Users,
   Loader2,
@@ -56,7 +55,7 @@ const PERIODS = [
   "residência",
 ];
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 2;
 
 type Props = {
   defaultDisplayName: string;
@@ -69,16 +68,13 @@ export function OnboardingWizard({ defaultDisplayName }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const [displayName, setDisplayName] = useState(defaultDisplayName);
-  const [pronouns, setPronouns] = useState("");
   const [course, setCourse] = useState<string>("medicina");
   const [period, setPeriod] = useState<string>("");
   const [cohort, setCohort] = useState("");
-  const [academy, setAcademy] = useState("");
 
   function canAdvance() {
     if (step === 1) return displayName.trim().length >= 2;
     if (step === 2) return !!course && !!period && cohort.trim().length >= 2;
-    if (step === 3) return academy.trim().length >= 2;
     return false;
   }
 
@@ -105,11 +101,9 @@ export function OnboardingWizard({ defaultDisplayName }: Props) {
     startTransition(async () => {
       const result = await completeOnboarding({
         displayName: displayName.trim(),
-        pronouns: pronouns.trim() || undefined,
         course,
         period,
         cohort: cohort.trim(),
-        academy: academy.trim(),
       });
       if (!result.ok) {
         setError(result.error);
@@ -223,8 +217,6 @@ export function OnboardingWizard({ defaultDisplayName }: Props) {
               <Step1
                 displayName={displayName}
                 setDisplayName={setDisplayName}
-                pronouns={pronouns}
-                setPronouns={setPronouns}
               />
             )}
             {step === 2 && (
@@ -235,16 +227,7 @@ export function OnboardingWizard({ defaultDisplayName }: Props) {
                 setPeriod={setPeriod}
                 cohort={cohort}
                 setCohort={setCohort}
-              />
-            )}
-            {step === 3 && (
-              <Step3
-                academy={academy}
-                setAcademy={setAcademy}
                 displayName={displayName}
-                course={course}
-                period={period}
-                cohort={cohort}
               />
             )}
 
@@ -332,13 +315,9 @@ export function OnboardingWizard({ defaultDisplayName }: Props) {
 function Step1({
   displayName,
   setDisplayName,
-  pronouns,
-  setPronouns,
 }: {
   displayName: string;
   setDisplayName: (v: string) => void;
-  pronouns: string;
-  setPronouns: (v: string) => void;
 }) {
   return (
     <div>
@@ -359,16 +338,6 @@ function Step1({
         placeholder="ex: Marina"
         maxLength={50}
       />
-
-      <div style={{ height: 18 }} />
-
-      <FieldLabel>Pronomes · opcional</FieldLabel>
-      <Input
-        value={pronouns}
-        onChange={(e) => setPronouns(e.target.value)}
-        placeholder="ex: ela / dele / elu"
-        maxLength={20}
-      />
     </div>
   );
 }
@@ -380,6 +349,7 @@ function Step2({
   setPeriod,
   cohort,
   setCohort,
+  displayName,
 }: {
   course: string;
   setCourse: (v: string) => void;
@@ -387,7 +357,11 @@ function Step2({
   setPeriod: (v: string) => void;
   cohort: string;
   setCohort: (v: string) => void;
+  displayName: string;
 }) {
+  const courseLabel =
+    COURSES.find((c) => c.id === course)?.label ?? course;
+
   return (
     <div>
       <Eyebrow>Tua formação</Eyebrow>
@@ -429,15 +403,13 @@ function Step2({
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: 18,
+          marginBottom: 28,
         }}
         className="av-onb-row"
       >
         <div>
           <FieldLabel>Período · obrigatório</FieldLabel>
-          <Select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-          >
+          <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
             <option value="">selecionar…</option>
             {PERIODS.map((p) => (
               <option key={p} value={p}>
@@ -456,50 +428,10 @@ function Step2({
           />
         </div>
       </div>
-    </div>
-  );
-}
 
-function Step3({
-  academy,
-  setAcademy,
-  displayName,
-  course,
-  period,
-  cohort,
-}: {
-  academy: string;
-  setAcademy: (v: string) => void;
-  displayName: string;
-  course: string;
-  period: string;
-  cohort: string;
-}) {
-  const courseLabel =
-    COURSES.find((c) => c.id === course)?.label ?? course;
-
-  return (
-    <div>
-      <Eyebrow>Falta pouco</Eyebrow>
-      <Title>
-        E em qual <span style={{ fontStyle: "italic", color: "var(--brand)" }}>academia</span>?
-      </Title>
-      <Sub>
-        Faculdade, universidade, centro universitário. Mesmo nome que tá no diário.
-      </Sub>
-
-      <FieldLabel>Academia · obrigatório</FieldLabel>
-      <Input
-        autoFocus
-        value={academy}
-        onChange={(e) => setAcademy(e.target.value)}
-        placeholder="ex: UNIFAC · Faculdade de Medicina"
-        maxLength={80}
-      />
-
+      {/* Summary */}
       <div
         style={{
-          marginTop: 28,
           padding: 18,
           borderRadius: 14,
           background: "var(--bg-elev-2)",
@@ -521,13 +453,7 @@ function Step3({
         <SummaryRow icon={Stethoscope} label="Nome" value={displayName || "—"} />
         <SummaryRow icon={GraduationCap} label="Curso" value={courseLabel} />
         <SummaryRow icon={CalendarRange} label="Período" value={period || "—"} />
-        <SummaryRow icon={Users} label="Turma" value={cohort || "—"} />
-        <SummaryRow
-          icon={Building2}
-          label="Academia"
-          value={academy || "—"}
-          last
-        />
+        <SummaryRow icon={Users} label="Turma" value={cohort || "—"} last />
       </div>
     </div>
   );
