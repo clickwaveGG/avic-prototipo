@@ -8,7 +8,6 @@ export type OnboardingPayload = {
   displayName: string;
   course: string;
   period: string;
-  cohort: string;
 };
 
 export type OnboardingResult =
@@ -44,7 +43,6 @@ export async function completeOnboarding(
   const displayName = payload.displayName.trim();
   const course = payload.course.trim().toLowerCase();
   const period = payload.period.trim();
-  const cohort = payload.cohort.trim();
 
   if (displayName.length < 2) {
     return { ok: false, error: "Nome muito curto." };
@@ -55,9 +53,6 @@ export async function completeOnboarding(
   if (!period) {
     return { ok: false, error: "Diz o período em que tu tá." };
   }
-  if (!cohort) {
-    return { ok: false, error: "Falta a turma." };
-  }
 
   const { error } = await supabase
     .from("user_profiles")
@@ -65,7 +60,6 @@ export async function completeOnboarding(
       display_name: displayName,
       course,
       period,
-      cohort,
       onboarded_at: new Date().toISOString(),
     })
     .eq("id", user.id);

@@ -15,7 +15,6 @@ import {
   Dna,
   BookOpenText,
   CalendarRange,
-  Users,
   Loader2,
 } from "lucide-react";
 import { AvicenaMark } from "@/components/avicena";
@@ -55,16 +54,6 @@ const PERIODS = [
   "residência",
 ];
 
-const COHORT_OPTIONS = [
-  "Turma A",
-  "Turma B",
-  "Turma C",
-  "Turma D",
-  "Turma E",
-  "Turma F",
-  "Turma única",
-];
-const COHORT_OTHER = "__other__";
 
 const TOTAL_STEPS = 2;
 
@@ -81,12 +70,10 @@ export function OnboardingWizard({ defaultDisplayName }: Props) {
   const [displayName, setDisplayName] = useState(defaultDisplayName);
   const [course, setCourse] = useState<string>("medicina");
   const [period, setPeriod] = useState<string>("");
-  const [cohort, setCohort] = useState("");
-  const [cohortIsOther, setCohortIsOther] = useState(false);
 
   function canAdvance() {
     if (step === 1) return displayName.trim().length >= 2;
-    if (step === 2) return !!course && !!period && cohort.trim().length >= 2;
+    if (step === 2) return !!course && !!period;
     return false;
   }
 
@@ -115,7 +102,6 @@ export function OnboardingWizard({ defaultDisplayName }: Props) {
         displayName: displayName.trim(),
         course,
         period,
-        cohort: cohort.trim(),
       });
       if (!result.ok) {
         setError(result.error);
@@ -237,10 +223,6 @@ export function OnboardingWizard({ defaultDisplayName }: Props) {
                 setCourse={setCourse}
                 period={period}
                 setPeriod={setPeriod}
-                cohort={cohort}
-                setCohort={setCohort}
-                cohortIsOther={cohortIsOther}
-                setCohortIsOther={setCohortIsOther}
                 displayName={displayName}
               />
             )}
@@ -364,31 +346,14 @@ function Step2({
   setCourse,
   period,
   setPeriod,
-  cohort,
-  setCohort,
-  cohortIsOther,
-  setCohortIsOther,
   displayName,
 }: {
   course: string;
   setCourse: (v: string) => void;
   period: string;
   setPeriod: (v: string) => void;
-  cohort: string;
-  setCohort: (v: string) => void;
-  cohortIsOther: boolean;
-  setCohortIsOther: (v: boolean) => void;
   displayName: string;
 }) {
-  function onCohortSelect(v: string) {
-    if (v === COHORT_OTHER) {
-      setCohortIsOther(true);
-      setCohort("");
-    } else {
-      setCohortIsOther(false);
-      setCohort(v);
-    }
-  }
   const courseLabel =
     COURSES.find((c) => c.id === course)?.label ?? course;
 
@@ -396,7 +361,7 @@ function Step2({
     <div>
       <Eyebrow>Tua formação</Eyebrow>
       <Title>
-        Em qual <span style={{ fontStyle: "italic", color: "var(--brand)" }}>cátedra</span> tu tá?
+        Em qual <span style={{ fontStyle: "italic", color: "var(--brand)" }}>curso</span> tu tá?
       </Title>
       <Sub>
         Isso muda o tom do Hipócrates, as sugestões e o que aparece no teu Consultório.
@@ -431,57 +396,19 @@ function Step2({
         })}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 18,
-          marginBottom: 28,
-        }}
-        className="av-onb-row"
-      >
-        <div>
-          <FieldLabel>Em que período tu está · obrigatório</FieldLabel>
-          <FieldHint>
-            O semestre que tu tá cursando agora. Internato ou residência? Tem opção pros dois.
-          </FieldHint>
-          <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-            <option value="">Escolhe teu período…</option>
-            {PERIODS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div>
-          <FieldLabel>Qual tua turma · obrigatório</FieldLabel>
-          <FieldHint>
-            Seleciona a tua. Se a faculdade usa um código diferente, escolhe &ldquo;Outra&rdquo; e digita.
-          </FieldHint>
-          <Select
-            value={cohortIsOther ? COHORT_OTHER : cohort}
-            onChange={(e) => onCohortSelect(e.target.value)}
-          >
-            <option value="">Escolhe tua turma…</option>
-            {COHORT_OPTIONS.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-            <option value={COHORT_OTHER}>Outra (digitar)</option>
-          </Select>
-          {cohortIsOther && (
-            <Input
-              autoFocus
-              value={cohort}
-              onChange={(e) => setCohort(e.target.value)}
-              placeholder="ex: M3-2026.1, MED23A, Turma 305"
-              maxLength={30}
-              style={{ marginTop: 8 }}
-            />
-          )}
-        </div>
+      <div style={{ marginBottom: 28 }}>
+        <FieldLabel>Em que período tu está · obrigatório</FieldLabel>
+        <FieldHint>
+          O semestre que tu tá cursando agora. Internato ou residência? Tem opção pros dois.
+        </FieldHint>
+        <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
+          <option value="">Escolhe teu período…</option>
+          {PERIODS.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </Select>
       </div>
 
       {/* Summary */}
@@ -507,8 +434,7 @@ function Step2({
         </div>
         <SummaryRow icon={Stethoscope} label="Nome" value={displayName || "—"} />
         <SummaryRow icon={GraduationCap} label="Curso" value={courseLabel} />
-        <SummaryRow icon={CalendarRange} label="Período" value={period || "—"} />
-        <SummaryRow icon={Users} label="Turma" value={cohort || "—"} last />
+        <SummaryRow icon={CalendarRange} label="Período" value={period || "—"} last />
       </div>
     </div>
   );
