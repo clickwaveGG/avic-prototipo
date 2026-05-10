@@ -55,6 +55,17 @@ const PERIODS = [
   "residência",
 ];
 
+const COHORT_OPTIONS = [
+  "Turma A",
+  "Turma B",
+  "Turma C",
+  "Turma D",
+  "Turma E",
+  "Turma F",
+  "Turma única",
+];
+const COHORT_OTHER = "__other__";
+
 const TOTAL_STEPS = 2;
 
 type Props = {
@@ -71,6 +82,7 @@ export function OnboardingWizard({ defaultDisplayName }: Props) {
   const [course, setCourse] = useState<string>("medicina");
   const [period, setPeriod] = useState<string>("");
   const [cohort, setCohort] = useState("");
+  const [cohortIsOther, setCohortIsOther] = useState(false);
 
   function canAdvance() {
     if (step === 1) return displayName.trim().length >= 2;
@@ -227,6 +239,8 @@ export function OnboardingWizard({ defaultDisplayName }: Props) {
                 setPeriod={setPeriod}
                 cohort={cohort}
                 setCohort={setCohort}
+                cohortIsOther={cohortIsOther}
+                setCohortIsOther={setCohortIsOther}
                 displayName={displayName}
               />
             )}
@@ -352,6 +366,8 @@ function Step2({
   setPeriod,
   cohort,
   setCohort,
+  cohortIsOther,
+  setCohortIsOther,
   displayName,
 }: {
   course: string;
@@ -360,8 +376,19 @@ function Step2({
   setPeriod: (v: string) => void;
   cohort: string;
   setCohort: (v: string) => void;
+  cohortIsOther: boolean;
+  setCohortIsOther: (v: boolean) => void;
   displayName: string;
 }) {
+  function onCohortSelect(v: string) {
+    if (v === COHORT_OTHER) {
+      setCohortIsOther(true);
+      setCohort("");
+    } else {
+      setCohortIsOther(false);
+      setCohort(v);
+    }
+  }
   const courseLabel =
     COURSES.find((c) => c.id === course)?.label ?? course;
 
@@ -430,14 +457,30 @@ function Step2({
         <div>
           <FieldLabel>Qual tua turma · obrigatório</FieldLabel>
           <FieldHint>
-            Como tua turma aparece no diário/SIGAA. Pode ser código (M3-2026.1), nome (Hipócrates) ou número da sala. Se não sabe, pergunta no grupo.
+            Seleciona a tua. Se a faculdade usa um código diferente, escolhe &ldquo;Outra&rdquo; e digita.
           </FieldHint>
-          <Input
-            value={cohort}
-            onChange={(e) => setCohort(e.target.value)}
-            placeholder="M3-2026.1 · MED23A · Turma 305"
-            maxLength={30}
-          />
+          <Select
+            value={cohortIsOther ? COHORT_OTHER : cohort}
+            onChange={(e) => onCohortSelect(e.target.value)}
+          >
+            <option value="">Escolhe tua turma…</option>
+            {COHORT_OPTIONS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+            <option value={COHORT_OTHER}>Outra (digitar)</option>
+          </Select>
+          {cohortIsOther && (
+            <Input
+              autoFocus
+              value={cohort}
+              onChange={(e) => setCohort(e.target.value)}
+              placeholder="ex: M3-2026.1, MED23A, Turma 305"
+              maxLength={30}
+              style={{ marginTop: 8 }}
+            />
+          )}
         </div>
       </div>
 
