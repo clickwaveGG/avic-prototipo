@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { posthog } from "@/lib/posthog";
 
 type Props = {
   className?: string;
@@ -22,6 +23,7 @@ export function GoogleLoginButton({ className, children }: Props) {
     function onMessage(e: MessageEvent) {
       if (e.origin !== window.location.origin) return;
       if (e.data === "avicena-auth-ok") {
+        posthog?.capture("signup_completed", { method: "google" });
         window.location.reload();
       }
     }

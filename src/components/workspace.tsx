@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   Plus,
   Search,
@@ -16,6 +16,15 @@ import {
 } from "lucide-react";
 import Markdown from "react-markdown";
 import { signOut } from "@/app/actions/auth";
+import {
+  loadSessions,
+  loadMessages,
+  createSession,
+  saveMessage,
+  updateSessionTitle,
+  type ChatSessionRow,
+} from "@/app/actions/chat";
+import { posthog } from "@/lib/posthog";
 import {
   AvicenaMark,
   HipAvatar,
@@ -50,25 +59,7 @@ type Attachment = {
   size: number;
 };
 
-async function sendMessage(
-  messages: Message[],
-  attachment: Attachment | null
-): Promise<string> {
-  const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-      pdfBase64: attachment?.base64,
-      pdfName: attachment?.name,
-    }),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data?.error ?? "Falha ao consultar Hipócrates");
-  }
-  return data.text as string;
-}
+// sendMessage inlined no handleSend para controle de headers (rate limit)
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -130,8 +121,10 @@ export function Workspace({
   const [input, setInput] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [rateLimitRemaining, setRateLimitRemaining] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -142,6 +135,55 @@ export function Workspace({
   const initial = displayName.slice(0, 1).toUpperCase();
 
   const currentSession = sessions.find((s) => s.id === currentSessionId);
+
+  // Carrega sessoes do Supabase ao montar
+  useEffect(() => {
+    (async () => {
+      try {
+        const rows = await loadSessions();
+        const loaded: ChatSession[] = rows.map((r) => ({
+          id: r.id,
+          title: r.title,
+          messages: [],
+          createdAt: new Date(r.created_at).getTime(),
+        }));
+        setSessions(loaded);
+      } catch {
+        // Fallback silencioso — funciona sem persistencia
+      } finally {
+        setIsLoadingSessions(false);
+      }
+    })();
+  }, []);
+
+  // Carrega mensagens quando muda de sessao
+  const selectSession = useCallback(async (sessionId: string) => {
+    setCurrentSessionId(sessionId);
+    setSessions((prev) => {
+      const session = prev.find((s) => s.id === sessionId);
+      // So carrega se a sessao esta vazia (ainda nao carregou mensagens)
+      if (session && session.messages.length > 0) return prev;
+      return prev;
+    });
+
+    // Busca mensagens do Supabase
+    const msgs = await loadMessages(sessionId);
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId
+          ? {
+              ...s,
+              messages: msgs.map((m) => ({
+                id: m.id,
+                role: m.role,
+                content: m.content,
+                timestamp: new Date(m.created_at).getTime(),
+              })),
+            }
+          : s
+      )
+    );
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -154,9 +196,10 @@ export function Workspace({
     t.style.height = Math.min(t.scrollHeight, 200) + "px";
   }
 
-  const createNewSession = () => {
+  const createNewSession = async () => {
+    const dbId = await createSession("Nova anamnese");
     const newSession: ChatSession = {
-      id: Math.random().toString(36).substring(7),
+      id: dbId ?? Math.random().toString(36).substring(7),
       title: "Nova anamnese",
       messages: [],
       createdAt: Date.now(),
@@ -171,10 +214,13 @@ export function Workspace({
     let sessionId = currentSessionId;
     let updatedSessions = [...sessions];
 
+    // Cria sessao se nao existe
     if (!sessionId) {
+      const title = content.slice(0, 30) + (content.length > 30 ? "..." : "");
+      const dbId = await createSession(title);
       const newSession: ChatSession = {
-        id: Math.random().toString(36).substring(7),
-        title: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
+        id: dbId ?? Math.random().toString(36).substring(7),
+        title,
         messages: [],
         createdAt: Date.now(),
       };
@@ -194,12 +240,14 @@ export function Workspace({
     const sessionIndex = updatedSessions.findIndex((s) => s.id === sessionId);
     updatedSessions[sessionIndex].messages.push(userMessage);
 
-    if (
+    // Atualiza titulo na primeira mensagem
+    const isFirst =
       updatedSessions[sessionIndex].messages.filter((m) => m.role === "user")
-        .length === 1
-    ) {
-      updatedSessions[sessionIndex].title =
-        content.slice(0, 30) + (content.length > 30 ? "..." : "");
+        .length === 1;
+    if (isFirst) {
+      const title = content.slice(0, 30) + (content.length > 30 ? "..." : "");
+      updatedSessions[sessionIndex].title = title;
+      updateSessionTitle(sessionId, title).catch(() => {});
     }
 
     setSessions([...updatedSessions]);
@@ -210,11 +258,50 @@ export function Workspace({
     }
     setIsLoading(true);
 
+    // Persiste mensagem do usuario
+    saveMessage(sessionId, "user", content).catch(() => {});
+
+    // Track analytics
+    posthog?.capture("chat_sent", {
+      has_pdf: !!attachment,
+      session_id: sessionId,
+      message_length: content.length,
+    });
+    if (attachment) {
+      posthog?.capture("pdf_uploaded", {
+        file_name: attachment.name,
+        file_size_mb: +(attachment.size / 1024 / 1024).toFixed(2),
+      });
+    }
+
     try {
-      const aiResponseContent = await sendMessage(
-        updatedSessions[sessionIndex].messages,
-        attachment
-      );
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: updatedSessions[sessionIndex].messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          pdfBase64: attachment?.base64,
+          pdfName: attachment?.name,
+        }),
+      });
+
+      const data = await res.json();
+
+      // Atualiza rate limit remaining do header
+      const remaining = res.headers.get("X-RateLimit-Remaining");
+      if (remaining !== null) setRateLimitRemaining(parseInt(remaining, 10));
+
+      if (!res.ok) {
+        if (res.status === 429) {
+          posthog?.capture("rate_limit_hit");
+        }
+        throw new Error(data?.error ?? "Falha ao consultar Hipócrates");
+      }
+
+      const aiResponseContent = data.text as string;
 
       const assistantMessage: Message = {
         id: Math.random().toString(36).substring(7),
@@ -226,6 +313,9 @@ export function Workspace({
       updatedSessions[sessionIndex].messages.push(assistantMessage);
       setSessions([...updatedSessions]);
       setAttachment(null);
+
+      // Persiste resposta do assistente
+      saveMessage(sessionId, "assistant", aiResponseContent).catch(() => {});
     } catch (error) {
       const msg = error instanceof Error ? error.message : "erro desconhecido";
       const errorMessage: Message = {
@@ -349,7 +439,7 @@ export function Workspace({
             sessions.map((s) => (
               <button
                 key={s.id}
-                onClick={() => setCurrentSessionId(s.id)}
+                onClick={() => selectSession(s.id)}
                 style={{
                   width: "100%",
                   padding: "8px 12px",
@@ -494,10 +584,10 @@ export function Workspace({
               <Search size={14} /> Buscar
             </span>
             <span style={{ color: "var(--ink-faint)" }}>
-              <span style={{ fontWeight: 600, color: "var(--ink)" }}>
-                {currentSession?.messages.filter((m) => m.role === "user").length ?? 0}
+              <span style={{ fontWeight: 600, color: rateLimitRemaining !== null && rateLimitRemaining <= 5 ? "var(--vital-red)" : "var(--ink)" }}>
+                {rateLimitRemaining !== null ? rateLimitRemaining : "50"}
               </span>
-              /50 hoje
+              /50 restantes
             </span>
           </div>
         </header>

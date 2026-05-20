@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { AvicenaMark } from "@/components/avicena";
 import { completeOnboarding } from "@/app/actions/onboarding";
+import { posthog } from "@/lib/posthog";
 
 type Course = {
   id: string;
@@ -107,6 +108,8 @@ export function OnboardingWizard({ defaultDisplayName }: Props) {
         setError(result.error);
         return;
       }
+      posthog?.capture("onboarding_completed", { course, period });
+      posthog?.identify(undefined, { course, period, display_name: displayName.trim() });
       router.push("/");
       router.refresh();
     });
