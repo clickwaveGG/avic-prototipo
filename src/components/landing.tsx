@@ -263,6 +263,11 @@ export function Landing() {
         }}
       >
         Avicena é ferramenta de estudo. Não diagnostica, não prescreve, não substitui avaliação clínica presencial.
+        <div style={{ marginTop: 12, fontStyle: "normal" }}>
+          <a href="/termos" style={{ color: "var(--ink-muted)", textDecoration: "underline" }}>Termos de Uso</a>
+          {" · "}
+          <a href="/privacidade" style={{ color: "var(--ink-muted)", textDecoration: "underline" }}>Politica de Privacidade</a>
+        </div>
       </div>
 
     </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
 
 const SYSTEM_PROMPT = `Você é o Hipócrates, assistente de estudos do Avicena para estudantes de medicina, enfermagem, biomedicina, fisioterapia, farmácia, odontologia e nutrição no Brasil.
 
@@ -32,6 +33,23 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
+  const { allowed, remaining, resetAt } = rateLimit(user.id);
+  if (!allowed) {
+    return NextResponse.json(
+      {
+        error: "Limite de 50 anamneses/dia atingido. Teu compêndio descansa até amanhã.",
+        resetAt,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)),
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -90,7 +108,10 @@ export async function POST(req: NextRequest) {
       .map((b) => b.text)
       .join("");
 
-    return NextResponse.json({ text });
+    return NextResponse.json(
+      { text },
+      { headers: { "X-RateLimit-Remaining": String(remaining) } }
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : "erro desconhecido";
     return NextResponse.json(
