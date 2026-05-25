@@ -34,7 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "codices", label: "Códices", icon: BookOpenText, href: "/anamnese" },
   { id: "sabatinas", label: "Sabatinas", icon: ClipboardCheck, href: "/sabatinas", badge: 2 },
   { id: "roteiro", label: "Roteiro", icon: Calendar, href: "#", soon: true },
-  { id: "revisao", label: "Revisão", icon: Repeat2, href: "#", soon: true },
+  { id: "revisao", label: "Revisão", icon: Repeat2, href: "/revisao" },
   { id: "casos", label: "Casos", icon: UserSearch, href: "/casos" },
   { id: "turma", label: "Turma", icon: Users, href: "#", soon: true },
   { id: "carreira", label: "Carreira", icon: Award, href: "#", soon: true },

@@ -61,11 +61,11 @@ const TOOLS: Tool[] = [
   {
     id: "revisao",
     title: "Revisão SRS",
-    desc: "Flashcards com repetição espaçada gerados das anamneses. Reter sem reler.",
+    desc: "Flashcards com repetição espaçada e algoritmo SM-2. Reter sem reler.",
     icon: Repeat2,
-    href: "#",
-    status: "EM BREVE",
-    state: "soon",
+    href: "/revisao",
+    status: "ATIVO",
+    state: "active",
   },
   {
     id: "casos",
