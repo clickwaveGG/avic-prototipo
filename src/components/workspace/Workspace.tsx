@@ -286,7 +286,13 @@ export function Workspace({
         throw new Error(data?.error ?? "Falha ao consultar Hipócrates");
       }
 
-      const aiResponseContent = data.text as string;
+      let aiResponseContent = data.text as string;
+
+      // Se foi /quizar, adiciona link para sabatinas interativas
+      const isQuizCmd = content.trim().startsWith("/quizar");
+      if (isQuizCmd) {
+        aiResponseContent += "\n\n---\n💡 *Quer resolver essas questões de forma interativa? [Abre as Sabatinas](/sabatinas) e gera uma sabatina jogável sobre esse tema.*";
+      }
 
       const assistantMessage: Message = {
         id: Math.random().toString(36).substring(7),

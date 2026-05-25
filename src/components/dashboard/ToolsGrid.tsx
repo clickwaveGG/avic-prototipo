@@ -43,11 +43,11 @@ const TOOLS: Tool[] = [
   {
     id: "sabatinas",
     title: "Sabatinas da Cátedra",
-    desc: "Avaliações criadas pela Profª. Vence amanhã 23:59 — Necrose celular.",
+    desc: "Quizzes gerados por IA. 5 questões estilo Revalida sobre qualquer tema.",
     icon: ClipboardCheck,
-    href: "#",
-    status: "1 PENDENTE",
-    state: "urgent",
+    href: "/sabatinas",
+    status: "ATIVO",
+    state: "active",
   },
   {
     id: "roteiro",

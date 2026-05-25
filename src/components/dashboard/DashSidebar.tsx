@@ -32,7 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "home", label: "Consultório", icon: Stethoscope, href: "/", active: true },
   { id: "anamnese", label: "Anamneses", icon: MessageSquare, href: "/anamnese" },
   { id: "codices", label: "Códices", icon: BookOpenText, href: "/anamnese" },
-  { id: "sabatinas", label: "Sabatinas", icon: ClipboardCheck, href: "#", badge: 2 },
+  { id: "sabatinas", label: "Sabatinas", icon: ClipboardCheck, href: "/sabatinas", badge: 2 },
   { id: "roteiro", label: "Roteiro", icon: Calendar, href: "#", soon: true },
   { id: "revisao", label: "Revisão", icon: Repeat2, href: "#", soon: true },
   { id: "casos", label: "Casos", icon: UserSearch, href: "#", soon: true },
