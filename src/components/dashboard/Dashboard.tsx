@@ -331,8 +331,8 @@ export function Dashboard({
             title="Ferramentas da formação"
             right={
               <>
-                <span style={{ color: "var(--brand-soft)", fontWeight: 600 }}>3 ativas</span>
-                {" · 5 em breve"}
+                <span style={{ color: "var(--brand-soft)", fontWeight: 600 }}>5 ativas</span>
+                {" · 3 em breve"}
               </>
             }
           />

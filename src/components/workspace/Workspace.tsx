@@ -288,10 +288,12 @@ export function Workspace({
 
       let aiResponseContent = data.text as string;
 
-      // Se foi /quizar, adiciona link para sabatinas interativas
-      const isQuizCmd = content.trim().startsWith("/quizar");
-      if (isQuizCmd) {
-        aiResponseContent += "\n\n---\n💡 *Quer resolver essas questões de forma interativa? [Abre as Sabatinas](/sabatinas) e gera uma sabatina jogável sobre esse tema.*";
+      // Links para features interativas
+      const trimmedContent = content.trim();
+      if (trimmedContent.startsWith("/quizar")) {
+        aiResponseContent += "\n\n---\n💡 *Quer resolver de forma interativa? [Abre as Sabatinas](/sabatinas) e gera uma sabatina jogável sobre esse tema.*";
+      } else if (trimmedContent.startsWith("/caso")) {
+        aiResponseContent += "\n\n---\n💡 *Quer treinar raciocínio diagnóstico passo a passo? [Abre o Banco de Casos](/casos) e gera um caso interativo.*";
       }
 
       const assistantMessage: Message = {

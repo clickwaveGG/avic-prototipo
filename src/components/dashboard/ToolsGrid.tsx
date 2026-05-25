@@ -70,11 +70,11 @@ const TOOLS: Tool[] = [
   {
     id: "casos",
     title: "Banco de Casos",
-    desc: "Casos clínicos validados pela Cátedra. Raciocínio diagnóstico encadeado.",
+    desc: "Casos clínicos com revelação progressiva. Raciocínio diagnóstico passo a passo.",
     icon: UserSearch,
-    href: "#",
-    status: "EM BREVE",
-    state: "soon",
+    href: "/casos",
+    status: "ATIVO",
+    state: "active",
   },
   {
     id: "turma",
