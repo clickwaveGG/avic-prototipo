@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureOnboardingSchema } from "@/lib/ensure-schema";
 import { Landing } from "@/components/landing";
 import { Dashboard } from "@/components/dashboard";
+import { loadDashboardStats } from "@/app/actions/dashboard";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -28,5 +29,7 @@ export default async function Home() {
     redirect("/bem-vindo");
   }
 
-  return <Dashboard email={user.email ?? ""} profile={profile} />;
+  const stats = await loadDashboardStats();
+
+  return <Dashboard email={user.email ?? ""} profile={profile} stats={stats} />;
 }

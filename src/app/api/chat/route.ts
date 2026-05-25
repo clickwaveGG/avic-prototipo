@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const { allowed, remaining, resetAt } = rateLimit(user.id);
+  const { allowed, remaining, resetAt } = await rateLimit(user.id);
   if (!allowed) {
     return NextResponse.json(
       {
@@ -64,9 +64,10 @@ export async function POST(req: NextRequest) {
     messages: ClientMessage[];
     pdfBase64?: string;
     pdfName?: string;
+    slashHint?: string;
   };
 
-  const { messages, pdfBase64 } = body;
+  const { messages, pdfBase64, slashHint } = body;
   if (!messages || messages.length === 0) {
     return NextResponse.json({ error: "messages vazio" }, { status: 400 });
   }
@@ -96,10 +97,14 @@ export async function POST(req: NextRequest) {
   });
 
   try {
+    const systemPrompt = slashHint
+      ? `${SYSTEM_PROMPT}\n\n--- INSTRUÇÃO DO COMANDO ---\n${slashHint}`
+      : SYSTEM_PROMPT;
+
     const response = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      max_tokens: 2048,
+      system: systemPrompt,
       messages: formatted,
     });
 

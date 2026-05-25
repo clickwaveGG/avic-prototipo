@@ -4,10 +4,6 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   Plus,
   Search,
-  Stethoscope,
-  BookOpen,
-  Dna,
-  Heart,
   Menu,
   Paperclip,
   FileText,
@@ -30,7 +26,11 @@ import {
   HipAvatar,
   CodexCover,
   BtnSoft,
+  SlashPalette,
+  SLASH_CMDS,
 } from "@/components/avicena";
+import { expandSlashCommand } from "@/lib/slash-commands";
+import { EmptyState } from "./EmptyState";
 
 type Profile = {
   display_name: string | null;
@@ -74,33 +74,6 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-const QUICK_CARDS = [
-  {
-    cmd: "/caso",
-    title: "Análise de caso",
-    desc: "Estudo de caso clínico de neurologia",
-    icon: Stethoscope,
-  },
-  {
-    cmd: "/explicar",
-    title: "Fisiologia",
-    desc: "Cascata de coagulação sanguínea",
-    icon: Dna,
-  },
-  {
-    cmd: "/dose",
-    title: "Farmacologia",
-    desc: "Interações medicamentosas da varfarina",
-    icon: BookOpen,
-  },
-  {
-    cmd: "/resumir",
-    title: "Anatomia",
-    desc: "Anatomia do mediastino superior",
-    icon: Heart,
-  },
-];
-
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 5) return "boa madrugada";
@@ -125,6 +98,8 @@ export function Workspace({
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [rateLimitRemaining, setRateLimitRemaining] = useState<number | null>(null);
+  const [showSlashPalette, setShowSlashPalette] = useState(false);
+  const [slashActiveIndex, setSlashActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -211,6 +186,9 @@ export function Workspace({
   const handleSend = async (content: string) => {
     if (!content.trim() || isLoading) return;
 
+    setShowSlashPalette(false);
+    const { userMessage: expandedContent, systemHint } = expandSlashCommand(content);
+
     let sessionId = currentSessionId;
     let updatedSessions = [...sessions];
 
@@ -230,7 +208,7 @@ export function Workspace({
       setCurrentSessionId(sessionId);
     }
 
-    const userMessage: Message = {
+    const userMsg: Message = {
       id: Math.random().toString(36).substring(7),
       role: "user",
       content,
@@ -238,7 +216,7 @@ export function Workspace({
     };
 
     const sessionIndex = updatedSessions.findIndex((s) => s.id === sessionId);
-    updatedSessions[sessionIndex].messages.push(userMessage);
+    updatedSessions[sessionIndex].messages.push(userMsg);
 
     // Atualiza titulo na primeira mensagem
     const isFirst =
@@ -266,6 +244,7 @@ export function Workspace({
       has_pdf: !!attachment,
       session_id: sessionId,
       message_length: content.length,
+      slash_command: systemHint ? content.split(" ")[0] : null,
     });
     if (attachment) {
       posthog?.capture("pdf_uploaded", {
@@ -275,16 +254,22 @@ export function Workspace({
     }
 
     try {
+      const apiMessages = updatedSessions[sessionIndex].messages.map((m, i) => ({
+        role: m.role,
+        content:
+          i === updatedSessions[sessionIndex].messages.length - 1 && m.role === "user"
+            ? expandedContent
+            : m.content,
+      }));
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: updatedSessions[sessionIndex].messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+          messages: apiMessages,
           pdfBase64: attachment?.base64,
           pdfName: attachment?.name,
+          slashHint: systemHint ?? undefined,
         }),
       });
 
@@ -760,6 +745,28 @@ export function Workspace({
                 {uploadError}
               </div>
             )}
+            {showSlashPalette && (
+              <div style={{ position: "relative" }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 4,
+                    left: 0,
+                    zIndex: 50,
+                  }}
+                >
+                  <SlashPalette
+                    activeIndex={slashActiveIndex}
+                    compact
+                    onSelect={(cmd) => {
+                      setInput(cmd + " ");
+                      setShowSlashPalette(false);
+                      taRef.current?.focus();
+                    }}
+                  />
+                </div>
+              </div>
+            )}
             <div className="av-composer">
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <span
@@ -772,10 +779,47 @@ export function Workspace({
                   ref={taRef}
                   value={input}
                   onChange={(e) => {
-                    setInput(e.target.value);
+                    const val = e.target.value;
+                    setInput(val);
                     autoResize(e.target);
+                    if (val.startsWith("/") && !val.includes(" ")) {
+                      setShowSlashPalette(true);
+                      const match = SLASH_CMDS.findIndex((c) =>
+                        c.cmd.startsWith(val)
+                      );
+                      setSlashActiveIndex(match >= 0 ? match : 0);
+                    } else {
+                      setShowSlashPalette(false);
+                    }
                   }}
                   onKeyDown={(e) => {
+                    if (showSlashPalette) {
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setSlashActiveIndex((i) =>
+                          i < SLASH_CMDS.length - 1 ? i + 1 : 0
+                        );
+                        return;
+                      }
+                      if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setSlashActiveIndex((i) =>
+                          i > 0 ? i - 1 : SLASH_CMDS.length - 1
+                        );
+                        return;
+                      }
+                      if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) {
+                        e.preventDefault();
+                        const cmd = SLASH_CMDS[slashActiveIndex];
+                        setInput(cmd.cmd + " ");
+                        setShowSlashPalette(false);
+                        return;
+                      }
+                      if (e.key === "Escape") {
+                        setShowSlashPalette(false);
+                        return;
+                      }
+                    }
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleSend(input);
@@ -838,134 +882,3 @@ export function Workspace({
   );
 }
 
-function EmptyState({
-  displayName,
-  greeting,
-  onPick,
-}: {
-  displayName: string;
-  greeting: string;
-  onPick: (cmd: string) => void;
-}) {
-  const codices = [
-    { title: "Robbins Patologia", category: "Patologia" },
-    { title: "Porto Semiologia", category: "Cardio" },
-    { title: "Goodman & Gilman", category: "Farma" },
-  ];
-
-  return (
-    <div
-      style={{
-        flex: 1,
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "48px 24px",
-        textAlign: "center",
-        overflow: "hidden",
-      }}
-    >
-      <div className="av-aurora" style={{ inset: 0 }} />
-
-      <div style={{ position: "relative", zIndex: 2, maxWidth: 720, width: "100%" }}>
-        <div style={{ fontSize: 12.5, color: "var(--ink-faint)", marginBottom: 4 }}>
-          {greeting}, {displayName}
-        </div>
-        <h1
-          className="serif"
-          style={{
-            fontSize: "clamp(26px, 4vw, 36px)",
-            fontWeight: 600,
-            letterSpacing: "-0.015em",
-            marginBottom: 8,
-          }}
-        >
-          Como tá o estudo de{" "}
-          <span style={{ fontStyle: "italic", color: "var(--brand)" }}>Cardio</span>?
-        </h1>
-        <p
-          style={{
-            fontSize: 15,
-            color: "var(--ink-muted)",
-            marginBottom: 28,
-            maxWidth: 520,
-            margin: "0 auto 28px",
-          }}
-        >
-          Continua de onde parou no Porto, ou bora um códice novo?
-        </p>
-
-        <div className="av-codice-row">
-          {codices.map((c) => (
-            <CodexCover
-              key={c.title}
-              title={c.title}
-              category={c.category}
-              size="sm"
-            />
-          ))}
-        </div>
-
-        <div className="av-quick-grid">
-          {QUICK_CARDS.map((q) => {
-            const I = q.icon;
-            return (
-              <button
-                key={q.cmd}
-                onClick={() => onPick(`${q.cmd} ${q.desc.toLowerCase()}`)}
-                type="button"
-                style={{
-                  padding: "14px 16px",
-                  background: "var(--bg-elev-1)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 12,
-                  textAlign: "left",
-                  cursor: "pointer",
-                  transition: "all 160ms",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--brand-soft)";
-                  e.currentTarget.style.background = "var(--brand-soft-bg)";
-                  e.currentTarget.style.transform = "translateY(-1px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border)";
-                  e.currentTarget.style.background = "var(--bg-elev-1)";
-                  e.currentTarget.style.transform = "none";
-                }}
-              >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}
-                >
-                  <I size={16} style={{ color: "var(--brand)" }} />
-                  <span
-                    className="mono"
-                    style={{ fontSize: 11, color: "var(--accent)" }}
-                  >
-                    {q.cmd}
-                  </span>
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>
-                  {q.title}
-                </div>
-                <div
-                  style={{
-                    fontSize: 12.5,
-                    color: "var(--ink-muted)",
-                    marginTop: 2,
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {q.desc}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-    </div>
-  );
-}
