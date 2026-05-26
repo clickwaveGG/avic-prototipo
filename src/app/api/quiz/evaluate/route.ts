@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
 
 type EvaluateBody = {
   quizId: string;
@@ -11,6 +12,14 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
+  const rl = await rateLimit(user.id);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Limite diário atingido", remaining: rl.remaining },
+      { status: 429 }
+    );
   }
 
   const body = (await req.json()) as EvaluateBody;
